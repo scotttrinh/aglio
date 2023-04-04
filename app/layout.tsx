@@ -1,4 +1,6 @@
+
 import "./globals.css";
+import { Header } from "./header";
 
 export const metadata = {
   title: "Aglio",
@@ -12,7 +14,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <Header />
+        <main>{children}</main>
+      </body>
     </html>
   );
 }

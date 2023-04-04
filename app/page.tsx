@@ -1,8 +1,11 @@
 import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth/next";
 import { Inter } from "next/font/google";
+import Link from "next/link";
+import clsx from "clsx";
 
-import { authOptions } from "@/pages/api/auth/[...nextauth]";
+import { authOptions } from "@/authOptions";
+import { Logo } from "@/components/logo";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -13,11 +16,5 @@ export default async function Home() {
     redirect("/sequences");
   }
 
-  return (
-    <main>
-        <div>
-          <a href="/api/auth/signin">Sign in</a>
-        </div>
-    </main>
-  );
+  return <h1 className={clsx("text-3xl")}>Welcome to Aglio, a fragrant focus timer.</h1>;
 }
