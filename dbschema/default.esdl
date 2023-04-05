@@ -22,7 +22,9 @@ module default {
   }
 
   type Playlist {
-    required property url -> str;
+    required property url -> str {
+      constraint exclusive;
+    };
   }
 
   type Step {
