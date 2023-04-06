@@ -18,7 +18,7 @@ module default {
     property email_verified -> datetime;
 
     multi link accounts -> Account;
-    multi link sequences -> Sequence;
+    multi link sequences := .<owner[is Sequence];
   }
 
   type Playlist {
@@ -42,5 +42,6 @@ module default {
     multi link steps -> Step {
       on source delete delete target if orphan;
     };
+    required link owner -> User;
   }
 }
