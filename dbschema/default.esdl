@@ -28,13 +28,19 @@ module default {
   }
 
   type Step {
-    required link video -> Playlist;
-    required link audio -> Playlist;
+    required link video -> Playlist {
+      on source delete delete target if orphan;
+    };
+    required link audio -> Playlist {
+      on source delete delete target if orphan;
+    };
     required property duration -> int64;
   }
 
   type Sequence {
     required property name -> str;
-    multi link steps -> Step;
+    multi link steps -> Step {
+      on source delete delete target if orphan;
+    };
   }
 }

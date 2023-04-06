@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import e from "@/dbschema/edgeql-js";
 import { client } from "@/edgedb";
 
-export const Body = z.object({
+export const PostBody = z.object({
   name: z.string(),
   steps: z.array(
     z.object({
@@ -14,11 +14,11 @@ export const Body = z.object({
     })
   ),
 });
-export type Body = z.infer<typeof Body>;
+export type PostBody = z.infer<typeof PostBody>;
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const json = await request.json();
-  const bodyResult = Body.safeParse(json);
+  const bodyResult = PostBody.safeParse(json);
 
   if (!bodyResult.success) {
     return NextResponse.json(bodyResult.error, { status: 400 });
@@ -67,8 +67,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       });
     }
   );
-
-  console.log(insert.toEdgeQL());
 
   const result = await insert.run(client, {
     sequence: { name, steps },

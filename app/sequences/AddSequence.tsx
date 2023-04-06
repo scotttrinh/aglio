@@ -101,8 +101,8 @@ export function AddSequence() {
     });
     setIsFetching(false);
     startTransition(() => {
-      setName("");
-      setSteps([{ audio: "", video: "", duration: 0 }]);
+      //setName("");
+      //setSteps([{ audio: "", video: "", duration: 0 }]);
       router.refresh();
     });
   };
