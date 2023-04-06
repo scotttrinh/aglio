@@ -21,24 +21,22 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const bodyResult = Body.safeParse(json);
 
   if (!bodyResult.success) {
-    return NextResponse.json({ error: "Invalid body" }, { status: 400 });
+    return NextResponse.json(bodyResult.error, { status: 400 });
   }
 
   const { name, steps } = bodyResult.data;
   const insert = e.params(
     {
-      sequences: e.array(
-        e.tuple({
-          name: e.str,
-          steps: e.array(
-            e.tuple({ audio: e.str, video: e.str, duration: e.int64 })
-          ),
-        })
-      ),
+      sequence: e.tuple({
+        name: e.str,
+        steps: e.array(
+          e.tuple({ audio: e.str, video: e.str, duration: e.int64 })
+        ),
+      }),
     },
     (params) => {
       const playlists = e.for(
-        e.for(e.array_unpack(e.array_unpack(params.sequences).steps), (step) =>
+        e.for(e.array_unpack(params.sequence.steps), (step) =>
           e.set(step.video, step.audio)
         ),
         (playlistUrl) => {
@@ -53,44 +51,28 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         }
       );
 
-      return e.with(
-        [playlists],
-        e.for(e.array_unpack(params.sequences), (sequence) => {
-          return e.insert(e.Sequence, {
-            name: sequence.name,
-            steps: e.for(e.array_unpack(sequence.steps), (step) => {
-              return e.insert(e.Step, {
-                video: e.assert_single(
-                  e.select(playlists, (playlist) => ({
-                    filter_single: { url: step.video },
-                  }))
-                ),
-                audio: e.assert_single(
-                  e.select(playlists, (playlist) => ({
-                    filter_single: { url: step.audio },
-                  }))
-                ),
-                duration: step.duration,
-              });
-            }),
+      return e.with<any>([playlists], e.insert(e.Sequence, {
+        name: params.sequence.name,
+        steps: e.for(e.array_unpack(params.sequence.steps), (step) => {
+          return e.insert(e.Step, {
+            video: e.select(playlists, (playlist) => ({
+              filter_single: e.op(playlist.url, "=", step.video),
+            })),
+            audio: e.select(playlists, (playlist) => ({
+              filter_single: e.op(playlist.url, "=", step.audio),
+            })),
+            duration: step.duration,
           });
-        })
-      );
+        }),
+      }));
     }
   );
 
+  console.log(insert.toEdgeQL());
+
   const result = await insert.run(client, {
-    sequences: [{ name, steps }],
+    sequence: { name, steps },
   });
 
-  if (result.length !== 1) {
-    return NextResponse.json(
-      { error: "Failed to insert sequence" },
-      {
-        status: 500,
-      }
-    );
-  }
-
-  return NextResponse.json(result[0], { status: 201 });
+  return NextResponse.json(result, { status: 201 });
 }
