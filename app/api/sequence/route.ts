@@ -25,6 +25,22 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 
   const { name, steps } = bodyResult.data;
+  const insertPlaylists = e.params({ playlists: e.array(e.str) }, (params) =>
+    e.for(e.op("distinct", e.array_unpack(params.playlists)), (playlistUrl) =>
+      e
+        .insert(e.Playlist, {
+          url: playlistUrl,
+        })
+        .unlessConflict((playlist) => ({
+          on: playlist.url,
+          else: playlist,
+        }))
+    )
+  );
+  await insertPlaylists.run(client, {
+    playlists: steps.flatMap((step) => [step.video, step.audio]),
+  });
+
   const insert = e.params(
     {
       sequence: e.tuple({
@@ -35,36 +51,20 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       }),
     },
     (params) => {
-      const playlists = e.for(
-        e.for(e.array_unpack(params.sequence.steps), (step) =>
-          e.set(step.video, step.audio)
-        ),
-        (playlistUrl) => {
-          return e
-            .insert(e.Playlist, {
-              url: playlistUrl,
-            })
-            .unlessConflict((playlist) => ({
-              on: playlist.url,
-              else: playlist,
-            }));
-        }
-      );
-
-      return e.with<any>([playlists], e.insert(e.Sequence, {
+      return e.insert(e.Sequence, {
         name: params.sequence.name,
         steps: e.for(e.array_unpack(params.sequence.steps), (step) => {
           return e.insert(e.Step, {
-            video: e.select(playlists, (playlist) => ({
+            video: e.select(e.Playlist, (playlist) => ({
               filter_single: e.op(playlist.url, "=", step.video),
             })),
-            audio: e.select(playlists, (playlist) => ({
+            audio: e.select(e.Playlist, (playlist) => ({
               filter_single: e.op(playlist.url, "=", step.audio),
             })),
             duration: step.duration,
           });
         }),
-      }));
+      });
     }
   );
 
