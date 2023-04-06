@@ -2,6 +2,7 @@
 
 import { useTransition, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export function Actions({ id }: { id: string }) {
   const [isFetching, setIsFetching] = useState(false);
@@ -31,7 +32,7 @@ export function Actions({ id }: { id: string }) {
       <button type="button" onClick={handleDelete}>
         Delete
       </button>
-      <button type="button">Play</button>
+      <Link href={`/sequences/${id}`}>Play</Link>
     </div>
   );
 }
