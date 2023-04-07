@@ -9,7 +9,7 @@ export const Header = async () => {
   const session = await getServerSession(authOptions);
 
   return (
-    <header className={clsx("text-slate-50 grid gap-2 grid-cols-header")}>
+    <header className={clsx("text-slate-50 grid gap-2 grid-cols-header px-2")}>
       <Logo alt="Aglio" />
       <nav>Nav</nav>
       {!session && (

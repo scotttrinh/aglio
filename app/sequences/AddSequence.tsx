@@ -3,20 +3,28 @@
 import { useRouter } from "next/navigation";
 import { FormEvent, useState, useTransition } from "react";
 
+import { Button } from "@/components/Button";
+import { Input } from "@/components/Input";
+
 interface Step {
   audio: string;
   video: string;
   duration: number;
 }
 
-function EditStep(props: {
+function EditStep({
+  step,
+  index,
+  onChange,
+  onRemove,
+  onAdd,
+}: {
   step: Step;
   index: number;
+  onAdd: () => void;
   onChange: (index: number, step: Step) => void;
   onRemove: (index: number) => void;
 }) {
-  const { step, index, onChange, onRemove } = props;
-
   const handleAudioChange = (e: FormEvent<HTMLInputElement>) => {
     onChange(index, { ...step, audio: e.currentTarget.value });
   };
@@ -30,48 +38,66 @@ function EditStep(props: {
   };
 
   return (
-    <div>
-      <label>
-        Audio
-        <input type="text" value={step.audio} onChange={handleAudioChange} />
-      </label>
-      <label>
-        Video
-        <input type="text" value={step.video} onChange={handleVideoChange} />
-      </label>
-      <label>
-        Duration
-        <input
+    <>
+      <div className="col-start-4 col-span-3">
+        <Input
+          aria-label="audio"
+          type="text"
+          value={step.audio}
+          required
+          onChange={handleAudioChange}
+        />
+      </div>
+      <div className="col-start-7 col-span-3">
+        <Input
+          aria-label="video"
+          type="text"
+          value={step.video}
+          required
+          onChange={handleVideoChange}
+        />
+      </div>
+      <div className="col-start-10 col-span-1">
+        <Input
+          aria-label="duration"
           type="number"
           min="1"
           step="1"
           value={step.duration}
+          required
           onChange={handleDurationChange}
         />
-      </label>
-      <button type="button" onClick={() => onRemove(index)}>
-        Remove Step
-      </button>
-    </div>
+      </div>
+      <div className="col-start-11 col-end-13">
+        <Button type="button" onClick={() => onRemove(index)}>
+          Remove
+        </Button>
+      </div>
+      <div className="col-start-4 col-end-13">
+        <Button type="button" onClick={onAdd}>
+          Add Step
+        </Button>
+      </div>
+    </>
   );
 }
 
 export function AddSequence() {
   const [name, setName] = useState("");
-  const [steps, setSteps] = useState([{ audio: "", video: "", duration: 0 }]);
+  const [steps, setSteps] = useState([{ audio: "", video: "", duration: 20 }]);
   const router = useRouter();
   const [isFetching, setIsFetching] = useState(false);
   const [isPending, startTransition] = useTransition();
   const isBusy = isFetching || isPending;
 
-  const addStep = () => {
+  const handleAddStep = () => {
     setSteps((existingSteps) => [
       ...existingSteps,
-      { audio: "", video: "", duration: 0 },
+      { audio: "", video: "", duration: 20 },
     ]);
   };
 
-  const removeStep = (index: number) => {
+  const handleRemoteStep = (index: number) => {
     setSteps((existingSteps) => {
       const newSteps = [...existingSteps];
       newSteps.splice(index, 1);
@@ -79,7 +105,7 @@ export function AddSequence() {
     });
   };
 
-  const handleStepChange = (index: number, step: any) => {
+  const handleChangeStep = (index: number, step: any) => {
     setSteps((existingSteps) => {
       const newSteps = [...existingSteps];
       newSteps[index] = step;
@@ -89,49 +115,57 @@ export function AddSequence() {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    
-    console.log({ name, steps });
+
     setIsFetching(true);
     await fetch("/api/sequence/", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ name, steps }),
+      body: JSON.stringify({
+        name,
+        steps: steps.filter((step) => Boolean(step.audio && step.video)),
+      }),
     });
     setIsFetching(false);
     startTransition(() => {
-      //setName("");
-      //setSteps([{ audio: "", video: "", duration: 0 }]);
       router.refresh();
     });
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <label>
-        Name
-        <input
+    <form
+      className="grid grid-cols-12 gap-2 col-span-full"
+      onSubmit={handleSubmit}
+    >
+      <div className="col-start-1 col-span-3">Name</div>
+      <div className="col-start-4 col-span-3">Audio</div>
+      <div className="col-start-7 col-span-3">Video</div>
+      <div className="col-start-10 col-span-1">Duration</div>
+      <div className="col-start-11 col-end-13">
+        <Button type="submit" disabled={isBusy}>
+          Save
+        </Button>
+      </div>
+      <div className="col-start-1 col-span-3">
+        <Input
+          aria-label="name"
           type="text"
           value={name}
+          required
           onChange={(e) => setName(e.target.value)}
         />
-      </label>
-      <button type="button" onClick={addStep}>
-        Add Step
-      </button>
+      </div>
       {steps.map((step, index) => (
         <EditStep
           key={index}
           step={step}
           index={index}
-          onChange={handleStepChange}
-          onRemove={removeStep}
+          onAdd={handleAddStep}
+          onChange={handleChangeStep}
+          onRemove={handleRemoteStep}
         />
       ))}
-      <button type="submit" disabled={isBusy}>
-        Create Sequence
-      </button>
     </form>
   );
 }

@@ -4,7 +4,6 @@ import { getServerSessionUser } from "@/getServerSessionUser";
 import { client } from "@/edgedb"
 
 import { SequenceList } from "./SequenceList";
-import { AddSequence } from "./AddSequence";
 
 export default async function Sequences() {
   const user = await getServerSessionUser()
@@ -13,7 +12,6 @@ export default async function Sequences() {
   return (
     <>
       <h1>Sequences</h1>
-      <AddSequence />
       <SequenceList sequences={sequences} />
     </>
   );

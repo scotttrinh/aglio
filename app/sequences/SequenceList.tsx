@@ -1,11 +1,17 @@
 import { Fragment } from "react";
 
 import { Sequence } from "./query";
+
+import { AddSequence } from "./AddSequence";
 import { Actions } from "./Actions";
 
 export function SequenceList({ sequences }: { sequences: Sequence[] }) {
   return (
-    <div className="grid grid-cols-12">
+    <div className="grid grid-cols-12 gap-2">
+      <div className="col-start-1 col-end-4">Sequence</div>
+      <div className="col-start-4 col-end-10">Steps</div>
+      <div className="col-start-10 col-end-13" />
+      <AddSequence />
       {sequences.map((sequence) => (
         <SequenceRow key={sequence.id} sequence={sequence} />
       ))}
@@ -14,14 +20,11 @@ export function SequenceList({ sequences }: { sequences: Sequence[] }) {
 }
 
 function SequenceRow({ sequence }: { sequence: Sequence }) {
-  // Make a nested grid with sequence name, steps, and actions
   return (
     <>
-      <div className="col-start-1 col-end-3">{sequence.name}</div>
-      <div className="col-start-3 col-end-9">
-        <Steps steps={sequence.steps} />
-      </div>
-      <div className="col-start-9 col-end-12">
+      <div className="col-start-1 col-span-3">{sequence.name}</div>
+      <Steps steps={sequence.steps} />
+      <div className="col-start-11 col-end-13">
         <Actions id={sequence.id} />
       </div>
     </>
@@ -30,21 +33,18 @@ function SequenceRow({ sequence }: { sequence: Sequence }) {
 
 function Steps({ steps }: { steps: Sequence["steps"] }) {
   return (
-    <div className="grid grid-cols-3 gap-1">
-      <div>Audio</div>
-      <div>Video</div>
-      <div>Duration (minutes)</div>
+    <>
       {steps.map((step, index) => (
         <Fragment key={index}>
-          <div className="whitespace-nowrap overflow-x-auto">
+          <div className="col-start-4 col-span-3 whitespace-nowrap overflow-x-auto">
             {step.audio.url}
           </div>
-          <div className="whitespace-nowrap overflow-x-auto">
+          <div className="col-start-7 col-span-3 whitespace-nowrap overflow-x-auto">
             {step.video.url}
           </div>
-          <div>{step.duration}</div>
+          <div className="col-start-10 col-span-1">{step.duration}</div>
         </Fragment>
       ))}
-    </div>
+    </>
   );
 }
