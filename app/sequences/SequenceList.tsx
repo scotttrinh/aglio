@@ -1,4 +1,5 @@
 import { Fragment } from "react";
+import Link from "next/link";
 
 import { Sequence } from "./query";
 
@@ -22,7 +23,9 @@ export function SequenceList({ sequences }: { sequences: Sequence[] }) {
 function SequenceRow({ sequence }: { sequence: Sequence }) {
   return (
     <>
-      <div className="col-start-1 col-span-3">{sequence.name}</div>
+      <div className="col-start-1 col-span-3">
+        <Link className="underline" href={`/sequences/${sequence.id}`}>{sequence.name}</Link>
+      </div>
       <Steps steps={sequence.steps} />
       <div className="col-start-11 col-end-13">
         <Actions id={sequence.id} />

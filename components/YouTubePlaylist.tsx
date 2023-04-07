@@ -63,7 +63,7 @@ export function YouTubePlaylist({
 
   return (
     <div
-      className={clsx("w-full min-h-screen min-w-[200px]")}
+      className={clsx("w-full h-full min-h-[200px] min-w-[200px]")}
       ref={setDivElem}
     />
   );

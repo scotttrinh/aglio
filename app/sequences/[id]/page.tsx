@@ -25,13 +25,10 @@ export default async function SequenceDetailPage(context: Context) {
   ) as string;
 
   return (
-    <>
-      <h1>Sequence Detail</h1>
-      <p>
-        {sequence.name} ({sequence.id})
-      </p>
-
-<Player video={videoPlaylistId} audio={audioPlaylistId} />
-    </>
+    <Player
+      video={videoPlaylistId}
+      audio={audioPlaylistId}
+      duration={sequence.steps[0].duration}
+    />
   );
 }

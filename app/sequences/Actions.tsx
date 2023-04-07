@@ -3,7 +3,7 @@
 import { useTransition, useState } from "react";
 import { useRouter } from "next/navigation";
 
-import { Button, LinkButton } from "@/components/Button";
+import { Button } from "@/components/Button";
 
 export function Actions({ id }: { id: string }) {
   const [isFetching, setIsFetching] = useState(false);
@@ -33,7 +33,6 @@ export function Actions({ id }: { id: string }) {
       <Button type="button" onClick={handleDelete}>
         Delete
       </Button>
-      <LinkButton href={`/sequences/${id}`}>Play</LinkButton>
     </div>
   );
 }

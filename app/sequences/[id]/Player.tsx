@@ -1,18 +1,42 @@
 "use client";
-import { useState } from "react";
+
+import { useCallback, useState } from "react";
+
+import { Timer, TimerState } from "./Timer";
 import { VideoPlayer } from "./VideoPlayer";
 
-export function Player({ video, audio }: { video: string; audio: string }) {
+export function Player({
+  video,
+  audio,
+  duration,
+}: {
+  video: string;
+  audio: string;
+  duration: number;
+}) {
   const [isPlaying, setIsPlaying] = useState(false);
+  const handleTimerStateChange = useCallback((timerState: TimerState) => {
+    if (timerState === "running") {
+      setIsPlaying(true);
+    } else {
+      setIsPlaying(false);
+    }
+  }, []);
 
   return (
-    <>
-      <button type="button" onClick={() => setIsPlaying(!isPlaying)}>
-        {isPlaying ? "Pause" : "Play"}
-      </button>
-
-      <VideoPlayer src={video} isPlaying={isPlaying} isMuted />
-      <VideoPlayer src={audio} isPlaying={isPlaying} />
-    </>
+    <div className="overflow-y-auto flex-1">
+      <div className="relative h-full">
+        <VideoPlayer src={video} isPlaying={isPlaying} isMuted />
+        <div className="absolute bottom-0 left-0 p-8 bg-black/25 text-2xl">
+          <Timer
+            duration={duration}
+            onTimerStateChange={handleTimerStateChange}
+          />
+        </div>
+      </div>
+      <div className="h-full">
+        <VideoPlayer src={audio} isPlaying={isPlaying} />
+      </div>
+    </div>
   );
 }
