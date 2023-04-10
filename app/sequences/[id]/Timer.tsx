@@ -2,15 +2,10 @@
 
 import { useCallback, useEffect, useState } from "react";
 
+import { secondsToPaddedHMS } from "@/utils";
 import { Button } from "@/components/Button";
 
 export type TimerState = "running" | "paused" | "ended";
-
-function secondsToPaddedMinutesAndSeconds(seconds: number) {
-  return `${Math.floor(seconds / 60)
-    .toString()
-    .padStart(2, "0")}:${(seconds % 60).toString().padStart(2, "0")}`;
-}
 
 function useTimer({
   offset = 0,
@@ -95,9 +90,9 @@ export function Timer({
 
   const elapsedSeconds = duration * 60 - time;
   const elapsedTimeMinutesAndSeconds =
-    secondsToPaddedMinutesAndSeconds(elapsedSeconds);
-  const timeLeftMinutesAndSeconds = secondsToPaddedMinutesAndSeconds(time);
-  const totalTimeMinutesAndSeconds = secondsToPaddedMinutesAndSeconds(
+    secondsToPaddedHMS(elapsedSeconds);
+  const timeLeftMinutesAndSeconds = secondsToPaddedHMS(time);
+  const totalTimeMinutesAndSeconds = secondsToPaddedHMS(
     duration * 60
   );
 

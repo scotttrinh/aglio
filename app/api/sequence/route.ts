@@ -10,6 +10,7 @@ export const PostBody = z.object({
   steps: z.array(
     z.object({
       duration: z.number().int().positive(),
+      behaviors: z.array(z.enum(["PAUSES_VIDEO", "PAUSES_AUDIO"])),
     })
   ),
 });
@@ -33,7 +34,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     {
       sequence: e.tuple({
         name: e.str,
-        steps: e.array(e.tuple({ duration: e.int64 })),
+        steps: e.array(
+          e.tuple({ duration: e.int64, behaviors: e.array(e.str) })
+        ),
       }),
     },
     (params) => {
@@ -43,6 +46,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         steps: e.for(e.array_unpack(params.sequence.steps), (step) => {
           return e.insert(e.Step, {
             duration: step.duration,
+            behaviors: e.cast(e.array(e.Behavior), step.behaviors),
           });
         }),
       });

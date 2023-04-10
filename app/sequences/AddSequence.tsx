@@ -3,33 +3,48 @@
 import { useRouter } from "next/navigation";
 import { FormEvent, useState, useTransition } from "react";
 
+import { StepType, isBreak, secondsToPaddedHMS, stepTypeToBehaviors } from "@/utils";
+import { Step, Behavior } from "@/dbschema/interfaces";
 import { Button } from "@/components/Button";
 import { Input } from "@/components/Input";
 
-interface Step {
-  duration: number;
-}
+type UnsavedStep = Omit<Step, "id">;
 
 function EditStep({
   step,
   index,
   onChange,
   onRemove,
-  onAdd,
 }: {
-  step: Step;
+  step: UnsavedStep;
   index: number;
-  onAdd: () => void;
-  onChange: (index: number, step: Step) => void;
+  onChange: (index: number, step: UnsavedStep) => void;
   onRemove: (index: number) => void;
 }) {
   const handleDurationChange = (e: FormEvent<HTMLInputElement>) => {
     onChange(index, { ...step, duration: parseInt(e.currentTarget.value) });
   };
 
+  const handleTypeChange = (e: FormEvent<HTMLSelectElement>) => {
+    onChange(index, {
+      ...step,
+      behaviors: stepTypeToBehaviors[e.currentTarget.value as StepType],
+    });
+  };
+
+  const stepType = isBreak(step) ? "break" : "work";
+
+  console.log({ step, stepType });
+
   return (
     <>
-      <div className="col-start-10 col-span-1">
+      <div className="col-start-4 col-span-5">
+        <select className="w-full" value={stepType} onChange={handleTypeChange}>
+          <option value="work">Work</option>
+          <option value="break">Break</option>
+        </select>
+      </div>
+      <div className="col-start-9 col-span-2">
         <Input
           aria-label="duration"
           type="number"
@@ -45,28 +60,32 @@ function EditStep({
           Remove
         </Button>
       </div>
-      <div className="col-start-4 col-end-13">
-        <Button type="button" onClick={onAdd}>
-          Add Step
-        </Button>
-      </div>
     </>
   );
 }
 
 export function AddSequence() {
   const [name, setName] = useState("");
-  const [steps, setSteps] = useState([{ duration: 20 }]);
+  const [steps, setSteps] = useState<UnsavedStep[]>([
+    { duration: 25, behaviors: [] },
+  ]);
   const router = useRouter();
   const [isFetching, setIsFetching] = useState(false);
   const [isPending, startTransition] = useTransition();
   const isBusy = isFetching || isPending;
 
   const handleAddStep = () => {
-    setSteps((existingSteps) => [
-      ...existingSteps,
-      { duration: 20 },
-    ]);
+    setSteps((existingSteps) => {
+      const lastStep = existingSteps[existingSteps.length - 1] ?? {
+        duration: 5,
+        behaviors: ["PAUSES_VIDEO", "PAUSES_AUDIO"],
+      };
+      const duration = isBreak(lastStep) ? 25 : 5;
+      const behaviors: Behavior[] = isBreak(lastStep)
+        ? []
+        : ["PAUSES_VIDEO", "PAUSES_AUDIO"];
+      return [...existingSteps, { duration, behaviors }];
+    });
   };
 
   const handleRemoteStep = (index: number) => {
@@ -105,15 +124,18 @@ export function AddSequence() {
     });
   };
 
+  const totalDuration = secondsToPaddedHMS(
+    steps.reduce((total, step) => total + step.duration * 60, 0)
+  );
+
   return (
     <form
       className="grid grid-cols-12 gap-2 col-span-full"
       onSubmit={handleSubmit}
     >
       <div className="col-start-1 col-span-3">Name</div>
-      <div className="col-start-4 col-span-3">Audio</div>
-      <div className="col-start-7 col-span-3">Video</div>
-      <div className="col-start-10 col-span-1">Duration</div>
+      <div className="col-start-4 col-span-5">Step type</div>
+      <div className="col-start-9 col-span-2">Duration ({totalDuration})</div>
       <div className="col-start-11 col-end-13">
         <Button type="submit" disabled={isBusy}>
           Save
@@ -133,11 +155,15 @@ export function AddSequence() {
           key={index}
           step={step}
           index={index}
-          onAdd={handleAddStep}
           onChange={handleChangeStep}
           onRemove={handleRemoteStep}
         />
       ))}
+      <div className="col-start-4 col-end-13">
+        <Button type="button" onClick={handleAddStep}>
+          Add Step
+        </Button>
+      </div>
     </form>
   );
 }

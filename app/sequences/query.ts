@@ -4,12 +4,9 @@ export const sequenceQuery = e.params({ userId: e.uuid }, ({ userId }) =>
   e.select(e.Sequence, (sequence) => ({
     id: true,
     name: true,
-    steps: {
-      id: true,
-      audio: { url: true },
-      video: { url: true },
-      duration: true,
-    },
+    steps: (s) => ({
+      ...s["*"],
+    }),
 
     filter: e.op(sequence.owner.id, "=", userId),
   }))
