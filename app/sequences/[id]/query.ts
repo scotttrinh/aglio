@@ -20,3 +20,4 @@ export const sequenceQuery = e.params(
 );
 
 export type Sequence = $infer<typeof sequenceQuery>;
+export type Step = Exclude<Sequence, null>["steps"][number]; 

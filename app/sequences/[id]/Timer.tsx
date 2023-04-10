@@ -6,6 +6,12 @@ import { Button } from "@/components/Button";
 
 export type TimerState = "running" | "paused" | "ended";
 
+function secondsToPaddedMinutesAndSeconds(seconds: number) {
+  return `${Math.floor(seconds / 60)
+    .toString()
+    .padStart(2, "0")}:${(seconds % 60).toString().padStart(2, "0")}`;
+}
+
 function useTimer({
   offset = 0,
   onTick,
@@ -87,13 +93,25 @@ export function Timer({
     }
   }, [timerState, onTimerStateChange]);
 
+  const elapsedSeconds = duration * 60 - time;
+  const elapsedTimeMinutesAndSeconds =
+    secondsToPaddedMinutesAndSeconds(elapsedSeconds);
+  const timeLeftMinutesAndSeconds = secondsToPaddedMinutesAndSeconds(time);
+  const totalTimeMinutesAndSeconds = secondsToPaddedMinutesAndSeconds(
+    duration * 60
+  );
+
   return (
-    <div>
-      <div>{time}</div>
-      <div>{timerState}</div>
+    <>
+      <div className="flex">
+        <div>
+          {elapsedTimeMinutesAndSeconds} / {totalTimeMinutesAndSeconds}
+        </div>
+        <div className="ml-auto">-{timeLeftMinutesAndSeconds}</div>
+      </div>
       {timerState === "paused" && <Button onClick={start}>Start</Button>}
       {timerState === "running" && <Button onClick={pause}>Pause</Button>}
       <Button onClick={reset}>Reset</Button>
-    </div>
+    </>
   );
 }
