@@ -28,12 +28,6 @@ module default {
   }
 
   type Step {
-    required link video -> Playlist {
-      on source delete delete target if orphan;
-    };
-    required link audio -> Playlist {
-      on source delete delete target if orphan;
-    };
     required property duration -> int64;
   }
 
