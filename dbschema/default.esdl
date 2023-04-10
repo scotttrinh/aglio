@@ -30,8 +30,14 @@ module default {
     };
   }
 
+  scalar type Behavior extending enum<
+    'PAUSES_VIDEO',
+    'PAUSES_AUDIO',
+  >;
+
   type Step {
     required property duration -> int64;
+    required property behaviors -> array<Behavior>;
   }
 
   type Sequence {
