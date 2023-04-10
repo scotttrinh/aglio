@@ -7,8 +7,6 @@ import { Button } from "@/components/Button";
 import { Input } from "@/components/Input";
 
 interface Step {
-  audio: string;
-  video: string;
   duration: number;
 }
 
@@ -25,38 +23,12 @@ function EditStep({
   onChange: (index: number, step: Step) => void;
   onRemove: (index: number) => void;
 }) {
-  const handleAudioChange = (e: FormEvent<HTMLInputElement>) => {
-    onChange(index, { ...step, audio: e.currentTarget.value });
-  };
-
-  const handleVideoChange = (e: FormEvent<HTMLInputElement>) => {
-    onChange(index, { ...step, video: e.currentTarget.value });
-  };
-
   const handleDurationChange = (e: FormEvent<HTMLInputElement>) => {
     onChange(index, { ...step, duration: parseInt(e.currentTarget.value) });
   };
 
   return (
     <>
-      <div className="col-start-4 col-span-3">
-        <Input
-          aria-label="audio"
-          type="text"
-          value={step.audio}
-          required
-          onChange={handleAudioChange}
-        />
-      </div>
-      <div className="col-start-7 col-span-3">
-        <Input
-          aria-label="video"
-          type="text"
-          value={step.video}
-          required
-          onChange={handleVideoChange}
-        />
-      </div>
       <div className="col-start-10 col-span-1">
         <Input
           aria-label="duration"
@@ -84,7 +56,7 @@ function EditStep({
 
 export function AddSequence() {
   const [name, setName] = useState("");
-  const [steps, setSteps] = useState([{ audio: "", video: "", duration: 20 }]);
+  const [steps, setSteps] = useState([{ duration: 20 }]);
   const router = useRouter();
   const [isFetching, setIsFetching] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -93,7 +65,7 @@ export function AddSequence() {
   const handleAddStep = () => {
     setSteps((existingSteps) => [
       ...existingSteps,
-      { audio: "", video: "", duration: 20 },
+      { duration: 20 },
     ]);
   };
 
@@ -124,7 +96,7 @@ export function AddSequence() {
       },
       body: JSON.stringify({
         name,
-        steps: steps.filter((step) => Boolean(step.audio && step.video)),
+        steps: steps.filter((step) => Boolean(step.duration)),
       }),
     });
     setIsFetching(false);

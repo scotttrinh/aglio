@@ -10,8 +10,6 @@ export const sequenceQuery = e.params(
       name: true,
       steps: {
         id: true,
-        audio: { url: true },
-        video: { url: true },
         duration: true,
       },
 
@@ -20,4 +18,19 @@ export const sequenceQuery = e.params(
 );
 
 export type Sequence = $infer<typeof sequenceQuery>;
-export type Step = Exclude<Sequence, null>["steps"][number]; 
+export type Step = Exclude<Sequence, null>["steps"][number];
+
+export const playlistQuery = e.params(
+  {
+    userId: e.uuid,
+  },
+  (params) =>
+    e.select(e.Playlist, (playlist) => ({
+      id: true,
+      url: true,
+
+      filter: e.op(params.userId, "in", playlist["<playlists[is User]"].id),
+    }))
+);
+
+export type Playlist = $infer<typeof playlistQuery>[number];

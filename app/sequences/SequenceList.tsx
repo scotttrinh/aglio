@@ -39,12 +39,6 @@ function Steps({ steps }: { steps: Sequence["steps"] }) {
     <>
       {steps.map((step, index) => (
         <Fragment key={index}>
-          <div className="col-start-4 col-span-3 whitespace-nowrap overflow-x-auto">
-            {step.audio.url}
-          </div>
-          <div className="col-start-7 col-span-3 whitespace-nowrap overflow-x-auto">
-            {step.video.url}
-          </div>
           <div className="col-start-10 col-span-1">{step.duration}</div>
         </Fragment>
       ))}

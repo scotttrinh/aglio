@@ -6,17 +6,13 @@ import { client } from "@/edgedb";
 import { getServerSessionUser } from "@/getServerSessionUser";
 
 export const PostBody = z.object({
-  name: z.string(),
-  steps: z.array(
-    z.object({
-      duration: z.number().int().positive(),
-    })
-  ),
+  url: z.string().url(),
 });
 export type PostBody = z.infer<typeof PostBody>;
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const user = await getServerSessionUser();
+
   if (!user)
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
 
@@ -27,31 +23,21 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json(bodyResult.error, { status: 400 });
   }
 
-  const { name, steps } = bodyResult.data;
-
-  const insert = e.params(
-    {
-      sequence: e.tuple({
-        name: e.str,
-        steps: e.array(e.tuple({ duration: e.int64 })),
-      }),
-    },
-    (params) => {
-      return e.insert(e.Sequence, {
-        name: params.sequence.name,
-        owner: e.select(e.User, () => ({ filter_single: { id: user.id } })),
-        steps: e.for(e.array_unpack(params.sequence.steps), (step) => {
-          return e.insert(e.Step, {
-            duration: step.duration,
-          });
-        }),
-      });
-    }
-  );
-
-  const result = await insert.run(client, {
-    sequence: { name, steps },
-  });
+  const playlist = bodyResult.data;
+  const result = await e
+    .params({ url: e.str, userId: e.uuid }, ({ url, userId }) =>
+      e.update(e.User, () => ({
+        set: {
+          playlists: {
+            "+=": e.insert(e.Playlist, { url }).unlessConflict((playlist) => ({
+              on: playlist.url,
+              else: playlist,
+            })),
+          },
+        },
+      }))
+    )
+    .run(client, { url: playlist.url, userId: user.id });
 
   return NextResponse.json(result, { status: 201 });
 }
