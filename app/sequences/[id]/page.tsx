@@ -1,7 +1,7 @@
 import { client } from "@/edgedb";
 import { redirect } from "next/navigation";
 
-import { playlistQuery, sequenceQuery } from "./query";
+import { sourceQuery, sequenceQuery } from "./query";
 
 import { Player } from "./Player";
 import { getServerSessionUser } from "@/getServerSessionUser";
@@ -15,14 +15,14 @@ export default async function SequenceDetailPage(context: Context) {
   if (!user) return redirect("/login");
 
   const { id } = context.params;
-  const [sequence, playlists] = await Promise.all([
+  const [sequence, sources] = await Promise.all([
     sequenceQuery.run(client, { id }),
-    playlistQuery.run(client, { userId: user.id }),
+    sourceQuery.run(client, { userId: user.id }),
   ]);
 
   if (sequence === null) {
     return redirect("/sequences");
   }
 
-  return <Player steps={sequence.steps} playlists={playlists} />;
+  return <Player steps={sequence.steps} sources={sources} />;
 }

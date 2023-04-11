@@ -2,77 +2,91 @@
 
 import { useCallback, useState, ChangeEvent } from "react";
 import { match } from "ts-pattern";
+import { useRouter } from "next/navigation";
 
 import { Input } from "@/components/Input";
 import { Button } from "@/components/Button";
 
 import { Timer, TimerState } from "./Timer";
 import { VideoPlayer } from "./VideoPlayer";
-import { Playlist, Step } from "./query";
-import { useRouter } from "next/navigation";
+import { Source, Step } from "./query";
 
-function PlaylistSelection({
-  playlists,
-  onPlaylistSelect,
-  onPlaylistCreate,
-}: {
-  playlists: Playlist[];
-  onPlaylistSelect: (playlistId: string | null) => void;
-  onPlaylistCreate: (playlistId: string) => void;
-}) {
+function AddSource({ onCreate }: { onCreate: (url: string) => void }) {
   const [inputElem, setInputElem] = useState<HTMLInputElement | null>(null);
-  const [playlistUrl, setPlaylistUrl] = useState("");
-  const handlePlaylistUrlChange = (event: ChangeEvent<HTMLInputElement>) => {
+  const [sourceUrl, setSourceUrl] = useState("");
+  const handleSourceCreate = () => {
     try {
-      new URL(event.target.value);
+      const url = new URL(sourceUrl);
+
+      const isYouTubeHostname = url.hostname === "youtube.com";
+      const isYouTubePlaylist = url.searchParams.get("list") !== null;
+
+      if (!isYouTubeHostname || !isYouTubePlaylist) {
+        inputElem?.setCustomValidity(
+          "Value is not a valid YouTube playlist URL"
+        );
+        return;
+      }
+
       inputElem?.setCustomValidity("");
-      setPlaylistUrl(event.target.value);
+      onCreate(url.toString());
     } catch (error) {
       inputElem?.setCustomValidity("Value is not a valid URL");
     }
   };
 
   return (
+    <div className="flex gap-1">
+      <Input
+        ref={setInputElem}
+        type="text"
+        placeholder="Playlist URL"
+        value={sourceUrl}
+        onChange={(event) => setSourceUrl(event.target.value)}
+      />
+      <Button onClick={handleSourceCreate}>Create</Button>
+    </div>
+  );
+}
+
+function SourceSelection({
+  sources,
+  onSelect,
+}: {
+  sources: Source[];
+  onSelect: (playlistId: string | null) => void;
+}) {
+  return (
     <div className="flex flex-col gap-1 flex-1">
       <select
         className="w-full"
-        onChange={(event) => onPlaylistSelect(event.target.value || null)}
+        onChange={(event) => onSelect(event.target.value || null)}
       >
-        <option value="">Select a playlist</option>
-        {playlists.map((playlist) => (
-          <option key={playlist.id} value={playlist.id}>
-            {playlist.url}
+        <option value="">Select a source</option>
+        {sources.map((source) => (
+          <option key={source.id} value={source.id}>
+            {source.title ?? source.url}
           </option>
         ))}
       </select>
-      <div className="flex gap-1">
-        <Input
-          ref={setInputElem}
-          type="text"
-          placeholder="Playlist URL"
-          value={playlistUrl}
-          onChange={handlePlaylistUrlChange}
-        />
-        <Button onClick={() => onPlaylistCreate(playlistUrl)}>Create</Button>
-      </div>
     </div>
   );
 }
 
 export function Player({
   steps,
-  playlists,
+  sources,
 }: {
   steps: Step[];
-  playlists: Playlist[];
+  sources: Source[];
 }) {
-  const [createPlaylistError, setCreatePlaylistError] = useState<string | null>(
+  const [createSourceError, setCreateSourceError] = useState<string | null>(
     null
   );
 
-  const [video, setVideo] = useState<Playlist | null>(null);
+  const [video, setVideo] = useState<Source | null>(null);
 
-  const [audio, setAudio] = useState<Playlist | null>(null);
+  const [audio, setAudio] = useState<Source | null>(null);
 
   const [stepIndex, setStepIndex] = useState(0);
 
@@ -96,32 +110,35 @@ export function Player({
       .exhaustive();
   }, []);
 
-  const handlePlaylistCreate =
-    (playlistRole: "audio" | "video") => async (url: string) => {
-      // Use fetch to call API with the new playlist URL and check for any HTTP errors
-      // If there are no errors, use the router to refresh the page
+  const handleSourceCreate = async (url: string) => {
+    // Use fetch to call API with the new playlist URL and check for any HTTP errors
+    // If there are no errors, use the router to refresh the page
 
-      try {
-        const result = await fetch("/api/playlist", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ url }),
-        }).then((resp) => {
-          if (!resp.ok) {
-            throw new Error(resp.statusText);
-          }
-          return resp.json() as Promise<{ id: string }>;
-        });
-
-        router.refresh();
-      } catch (error) {
-        if (error instanceof Error) {
-          setCreatePlaylistError(error.message);
+    try {
+      const result = await fetch("/api/playlist", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          url,
+          provider: "youtube",
+          mediaType: "playlist",
+        }),
+      }).then((resp) => {
+        if (!resp.ok) {
+          throw new Error(resp.statusText);
         }
+        return resp.json() as Promise<{ id: string }>;
+      });
+
+      router.refresh();
+    } catch (error) {
+      if (error instanceof Error) {
+        setCreateSourceError(error.message);
       }
-    };
+    }
+  };
 
   const step = steps[stepIndex];
   const duration = step.duration;
@@ -137,43 +154,45 @@ export function Player({
     <div className="overflow-y-auto flex-1">
       <div className="flex gap-1 w-full">
         <div className="flex gap-1 flex-1">
+          <AddSource onCreate={handleSourceCreate} />
+        </div>
+        {createSourceError && (
+          <div className="bg-red-500 text-white p-2">{createSourceError}</div>
+        )}
+        <div className="flex gap-1 flex-1">
           <div>Video</div>
-          <PlaylistSelection
-            playlists={playlists}
-            onPlaylistSelect={(maybePlaylistId) => {
-              if (!maybePlaylistId) {
+          <SourceSelection
+            sources={sources}
+            onSelect={(maybeSourceId) => {
+              if (!maybeSourceId) {
                 setVideo(null);
                 return;
               }
 
               const found =
-                playlists.find((playlist) => playlist.id === maybePlaylistId) ??
-                null;
+                sources.find((source) => source.id === maybeSourceId) ?? null;
               if (found) {
                 setVideo(found);
               }
             }}
-            onPlaylistCreate={handlePlaylistCreate("video")}
           />
         </div>
         <div className="flex gap-1 flex-1">
           <div>Audio</div>
-          <PlaylistSelection
-            playlists={playlists}
-            onPlaylistSelect={(maybePlaylistId) => {
-              if (!maybePlaylistId) {
-                setAudio(null);
+          <SourceSelection
+            sources={sources}
+            onSelect={(maybeSourceId) => {
+              if (!maybeSourceId) {
+                setVideo(null);
                 return;
               }
 
               const found =
-                playlists.find((playlist) => playlist.id === maybePlaylistId) ??
-                null;
+                sources.find((source) => source.id === maybeSourceId) ?? null;
               if (found) {
                 setAudio(found);
               }
             }}
-            onPlaylistCreate={handlePlaylistCreate("audio")}
           />
         </div>
       </div>
