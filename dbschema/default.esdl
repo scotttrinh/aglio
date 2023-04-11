@@ -18,16 +18,21 @@ module default {
     property email_verified -> datetime;
 
     multi link accounts -> Account;
-    multi link playlists -> Playlist {
-      on source delete delete target if orphan;
+    multi link sources -> Source {
+      on target delete allow;
     };
     multi link sequences := .<owner[is Sequence];
   }
 
-  type Playlist {
+  type Source {
+    required property provider -> str;
+    required property media_type -> str;
     required property url -> str {
       constraint exclusive;
     };
+    property title -> str;
+    property thumbnail -> str;
+    property provider_meta -> json;
   }
 
   scalar type Behavior extending enum<
