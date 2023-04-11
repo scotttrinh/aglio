@@ -6,8 +6,10 @@ import { isBreak } from "@/utils";
 
 import { AddSequence } from "./AddSequence";
 import { Actions } from "./Actions";
+import { Button } from "@/components/Button";
 
-type SimpleSequence = helper.Props<Sequence> & Pick<helper.Links<Sequence>, "steps">;
+type SimpleSequence = helper.Props<Sequence> &
+  Pick<helper.Links<Sequence>, "steps">;
 
 export function SequenceList({ sequences }: { sequences: SimpleSequence[] }) {
   return (
@@ -28,11 +30,15 @@ function SequenceRow({ sequence }: { sequence: SimpleSequence }) {
   return (
     <>
       <div className="col-start-1 col-span-3">
-        <Link className="underline" href={`/sequences/${sequence.id}`}>{sequence.name}</Link>
+        <Link className="underline" href={`/sequences/${sequence.id}`}>
+          {sequence.name}
+        </Link>
       </div>
       {sequence.steps.map((step, index) => (
         <Fragment key={index}>
-          <div className="col-start-4 col-span-5">{isBreak(step) ? "Break" : "Work"}</div>
+          <div className="col-start-4 col-span-5">
+            {isBreak(step) ? "Break" : "Work"}
+          </div>
           <div className="col-start-9 col-span-2">{step.duration}</div>
         </Fragment>
       ))}

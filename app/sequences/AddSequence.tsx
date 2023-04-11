@@ -3,10 +3,16 @@
 import { useRouter } from "next/navigation";
 import { FormEvent, useState, useTransition } from "react";
 
-import { StepType, isBreak, secondsToPaddedHMS, stepTypeToBehaviors } from "@/utils";
+import {
+  StepType,
+  isBreak,
+  secondsToPaddedHMS,
+  stepTypeToBehaviors,
+} from "@/utils";
 import { Step, Behavior } from "@/dbschema/interfaces";
 import { Button } from "@/components/Button";
 import { Input } from "@/components/Input";
+import * as Disclosure from "@/components/Disclosure";
 
 type UnsavedStep = Omit<Step, "id">;
 
@@ -65,6 +71,7 @@ function EditStep({
 }
 
 export function AddSequence() {
+  const [isShowingForm, setIsShowingForm] = useState(false);
   const [name, setName] = useState("");
   const [steps, setSteps] = useState<UnsavedStep[]>([
     { duration: 25, behaviors: [] },
@@ -129,41 +136,58 @@ export function AddSequence() {
   );
 
   return (
-    <form
-      className="grid grid-cols-12 gap-2 col-span-full"
-      onSubmit={handleSubmit}
+    <Disclosure.Root
+      asChild
+      open={isShowingForm}
+      onOpenChange={setIsShowingForm}
     >
-      <div className="col-start-1 col-span-3">Name</div>
-      <div className="col-start-4 col-span-5">Step type</div>
-      <div className="col-start-9 col-span-2">Duration ({totalDuration})</div>
-      <div className="col-start-11 col-end-13">
-        <Button type="submit" disabled={isBusy}>
-          Save
-        </Button>
-      </div>
-      <div className="col-start-1 col-span-3">
-        <Input
-          aria-label="name"
-          type="text"
-          value={name}
-          required
-          onChange={(e) => setName(e.target.value)}
-        />
-      </div>
-      {steps.map((step, index) => (
-        <EditStep
-          key={index}
-          step={step}
-          index={index}
-          onChange={handleChangeStep}
-          onRemove={handleRemoteStep}
-        />
-      ))}
-      <div className="col-start-4 col-end-13">
-        <Button type="button" onClick={handleAddStep}>
-          Add Step
-        </Button>
-      </div>
-    </form>
+      <>
+        <Disclosure.Trigger asChild>
+          <div className="col-start-1 col-end-13">
+            <Button>{isShowingForm ? "Close" : "New Sequence"}</Button>
+          </div>
+        </Disclosure.Trigger>
+        <Disclosure.Content asChild>
+          <form
+            className="grid grid-cols-12 gap-2 col-span-full"
+            onSubmit={handleSubmit}
+          >
+            <div className="col-start-1 col-span-3">Name</div>
+            <div className="col-start-4 col-span-5">Step type</div>
+            <div className="col-start-9 col-span-2">
+              Duration ({totalDuration})
+            </div>
+            <div className="col-start-11 col-end-13">
+              <Button type="submit" disabled={isBusy}>
+                Save
+              </Button>
+            </div>
+            <div className="col-start-1 col-span-3">
+              <Input
+                aria-label="name"
+                type="text"
+                value={name}
+                required
+                onChange={(e) => setName(e.target.value)}
+              />
+            </div>
+            {steps.map((step, index) => (
+              <EditStep
+                key={index}
+                step={step}
+                index={index}
+                onChange={handleChangeStep}
+                onRemove={handleRemoteStep}
+              />
+            ))}
+            <div className="col-start-4 col-end-13">
+              <Button type="button" onClick={handleAddStep}>
+                Add Step
+              </Button>
+            </div>
+          </form>
+        </Disclosure.Content>
+      </>
+    </Disclosure.Root>
   );
 }
