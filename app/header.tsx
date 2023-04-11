@@ -1,27 +1,27 @@
 import Link from "next/link";
-import { getServerSession } from "next-auth/next";
-import clsx from "clsx";
 
-import { Logo } from "@/components/logo";
-import { authOptions } from "@/authOptions";
+import { getServerSessionUser } from "@/getServerSessionUser";
 
-export const Header = async () => {
-  const session = await getServerSession(authOptions);
+import { Breadcrumbs } from "./Breadcrumbs";
+
+export async function Header() {
+  const user = await getServerSessionUser();
 
   return (
-    <header className={clsx("text-slate-50 grid gap-2 grid-cols-header px-2")}>
-      <Logo alt="Aglio" />
-      <nav>Nav</nav>
-      {!session && (
-        <Link href="/api/auth/signin" className={clsx("underline")}>
-          Sign in
-        </Link>
-      )}
-      {session && (
-        <Link href="/api/auth/signout" className={clsx("underline")}>
-          Sign out
-        </Link>
-      )}
+    <header className="px-2 py-4 flex">
+      <Breadcrumbs />
+      <div className="ml-auto">
+        {!user && (
+          <Link href="/api/auth/signin" className="underline">
+            Sign in
+          </Link>
+        )}
+        {user && (
+          <Link href="/api/auth/signout" className="underline">
+            Sign out
+          </Link>
+        )}
+      </div>
     </header>
   );
-};
+}
