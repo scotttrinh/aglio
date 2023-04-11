@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState, ChangeEvent } from "react";
+import { useCallback, useState, FormEvent } from "react";
 import { match } from "ts-pattern";
 import { useRouter } from "next/navigation";
 
@@ -14,7 +14,9 @@ import { Source, Step } from "./query";
 function AddSource({ onCreate }: { onCreate: (url: string) => void }) {
   const [inputElem, setInputElem] = useState<HTMLInputElement | null>(null);
   const [sourceUrl, setSourceUrl] = useState("");
-  const handleSourceCreate = () => {
+  const handleSourceCreate = (event: FormEvent) => {
+    event.preventDefault();
+
     try {
       const url = new URL(sourceUrl);
 
@@ -29,6 +31,7 @@ function AddSource({ onCreate }: { onCreate: (url: string) => void }) {
       }
 
       inputElem?.setCustomValidity("");
+      setSourceUrl("");
       onCreate(url.toString());
     } catch (error) {
       inputElem?.setCustomValidity("Value is not a valid URL");
@@ -36,16 +39,16 @@ function AddSource({ onCreate }: { onCreate: (url: string) => void }) {
   };
 
   return (
-    <div className="flex gap-1">
+    <form className="flex gap-1" onSubmit={handleSourceCreate}>
       <Input
         ref={setInputElem}
         type="text"
-        placeholder="Playlist URL"
+        placeholder="YouTube Playlist URL"
         value={sourceUrl}
         onChange={(event) => setSourceUrl(event.target.value)}
       />
-      <Button onClick={handleSourceCreate}>Create</Button>
-    </div>
+      <Button>Create</Button>
+    </form>
   );
 }
 
