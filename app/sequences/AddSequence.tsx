@@ -15,6 +15,7 @@ import { Button } from "@/components/Button";
 import { Input } from "@/components/Input";
 import * as Disclosure from "@/components/Disclosure";
 import { Cell } from "@/components/GridTable";
+import * as Select from "@/components/Select";
 
 type UnsavedStep = Omit<Step, "id">;
 
@@ -33,10 +34,10 @@ function EditStep({
     onChange(index, { ...step, duration: parseInt(e.currentTarget.value) });
   };
 
-  const handleTypeChange = (e: FormEvent<HTMLSelectElement>) => {
+  const handleTypeChange = (value: string) => {
     onChange(index, {
       ...step,
-      behaviors: stepTypeToBehaviors[e.currentTarget.value as StepType],
+      behaviors: stepTypeToBehaviors[value as StepType],
     });
   };
 
@@ -44,11 +45,19 @@ function EditStep({
 
   return (
     <>
+      <Cell className="col-span-4" />
       <Cell className="col-span-4">
-        <select className="w-full" value={stepType} onChange={handleTypeChange}>
-          <option value="work">Work</option>
-          <option value="break">Break</option>
-        </select>
+        <Select.Root value={stepType} onValueChange={handleTypeChange}>
+          <Select.Trigger>
+            <Select.Value aria-label={stepType}>
+              {stepType === "work" ? "Work" : "Break"}
+            </Select.Value>
+          </Select.Trigger>
+          <Select.Content>
+            <Select.Item value="work">Work</Select.Item>
+            <Select.Item value="break">Break</Select.Item>
+          </Select.Content>
+        </Select.Root>
       </Cell>
       <Cell className="col-span-2">
         <Input
@@ -131,8 +140,18 @@ export function AddSequence() {
     });
   };
 
-  const totalDuration = secondsToPaddedHMS(
-    steps.reduce((total, step) => total + step.duration * 60, 0)
+  const totals = steps.reduce(
+    (acc, step) => {
+      const seconds = step.duration * 60;
+      if (isBreak(step)) {
+        acc.break += seconds;
+      } else {
+        acc.work += seconds;
+      }
+      acc.total += seconds;
+      return acc;
+    },
+    { total: 0, work: 0, break: 0 }
   );
 
   return (
@@ -141,41 +160,46 @@ export function AddSequence() {
       open={isShowingForm}
       onOpenChange={setIsShowingForm}
     >
-      <>
+      <form
+        className="grid grid-cols-12 col-span-full items-center"
+        onSubmit={handleSubmit}
+      >
         <Disclosure.Trigger asChild>
           <Cell className="col-span-1 flex justify-end py-1">
             <Button
               className="bg-transparent dark:bg-transparent border-transparent dark:border-transparent"
               aria-label="Add sequence"
+              type="button"
             >
               <IconPlus size={16} />
             </Button>
           </Cell>
         </Disclosure.Trigger>
-        <Cell className="col-start-11 col-span-2">
-          <Button type="submit" disabled={isBusy}>
-            Save
-          </Button>
-        </Cell>
         <Disclosure.Content asChild>
-          <form
-            className="grid grid-cols-12 col-span-full items-center"
-            onSubmit={handleSubmit}
-          >
-            <Cell className="col-span-1" />
-            <Cell className="col-span-3">Name</Cell>
-            <Cell className="col-span-4">Step type</Cell>
-            <Cell className="col-span-2">Duration ({totalDuration})</Cell>
-            <Cell className="col-span-2" />
-            <Cell className="col-span-1" />
+          <>
             <Cell className="col-span-3">
               <Input
+                placeholder="New sequence name"
                 aria-label="name"
                 type="text"
                 value={name}
                 required
                 onChange={(e) => setName(e.target.value)}
               />
+            </Cell>
+            <Cell className="col-span-2">
+              {secondsToPaddedHMS(totals.total)}
+            </Cell>
+            <Cell className="col-span-2">
+              {secondsToPaddedHMS(totals.work)}
+            </Cell>
+            <Cell className="col-span-2">
+              {secondsToPaddedHMS(totals.break)}
+            </Cell>
+            <Cell className="col-start-11 col-span-2">
+              <Button type="submit" disabled={isBusy}>
+                Save
+              </Button>
             </Cell>
             {steps.map((step, index) => (
               <EditStep
@@ -191,9 +215,9 @@ export function AddSequence() {
                 Add Step
               </Button>
             </Cell>
-          </form>
+          </>
         </Disclosure.Content>
-      </>
+      </form>
     </Disclosure.Root>
   );
 }
