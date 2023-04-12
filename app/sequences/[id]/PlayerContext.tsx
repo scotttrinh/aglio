@@ -32,12 +32,16 @@ const PlayerContext = createContext<ContextValue | null>(null);
 export function PlayerProvider({
   children,
   state,
+  isMuted = false,
+  isShuffled = false,
   onStateChange,
   source,
   targetElem,
 }: {
   children: React.ReactNode;
   state: PlayerState;
+  isMuted?: boolean;
+  isShuffled?: boolean;
   onStateChange: (state: PlayerState) => void;
   source: Source | null;
   targetElem: HTMLElement | null;
@@ -102,13 +106,21 @@ export function PlayerProvider({
           modestbranding: 1,
         },
       });
+      newPlayer.setShuffle(isShuffled);
       setPlayer(newPlayer);
 
       return () => {
         newPlayer.destroy();
       };
     },
-    [source, targetElem]
+    [source, targetElem, isShuffled]
+  );
+
+  useEffect(
+    function syncShuffle() {
+      player?.setShuffle(isShuffled);
+    },
+    [player, isShuffled]
   );
 
   useEffect(
@@ -122,6 +134,21 @@ export function PlayerProvider({
       });
     },
     [player, state]
+  );
+
+  useEffect(
+    function syncMutedState() {
+      player?.isMuted().then((mutedState) => {
+        if (mutedState !== isMuted) {
+          if (isMuted) {
+            player?.mute();
+          } else {
+            player?.unMute();
+          }
+        }
+      });
+    },
+    [player, isMuted]
   );
 
   useEffect(

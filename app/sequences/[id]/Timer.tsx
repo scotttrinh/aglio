@@ -2,6 +2,10 @@ import { useCallback, useEffect, useState } from "react";
 
 import { secondsToPaddedHMS } from "@/utils";
 import { Button } from "@/components/Button";
+import {
+  IconPlayerPauseFilled,
+  IconPlayerPlayFilled,
+} from "@tabler/icons-react";
 
 export type TimerState = "running" | "paused" | "ended";
 
@@ -89,15 +93,23 @@ export function Timer({
   const totalTimeMinutesAndSeconds = secondsToPaddedHMS(duration * 60);
 
   return (
-    <>
+    <div className="flex flex-col">
       <div className="flex">
         <div>
           {elapsedTimeMinutesAndSeconds} / {totalTimeMinutesAndSeconds}
         </div>
         <div className="ml-auto">-{timeLeftMinutesAndSeconds}</div>
       </div>
-      {timerState === "paused" && <Button onClick={start}>Start</Button>}
-      {timerState === "running" && <Button onClick={pause}>Pause</Button>}
-    </>
+      {timerState === "paused" && (
+        <Button onClick={start}>
+          <IconPlayerPlayFilled size={56} />
+        </Button>
+      )}
+      {timerState === "running" && (
+        <Button onClick={pause}>
+          <IconPlayerPauseFilled size={56} />
+        </Button>
+      )}
+    </div>
   );
 }

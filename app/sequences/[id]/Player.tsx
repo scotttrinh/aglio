@@ -130,15 +130,6 @@ export function Player({
   const step = steps[stepIndex];
   const duration = step.duration;
 
-  const audioPlaylistId = audio
-    ? new URL(audio.url).searchParams.get("list")
-    : null;
-  const videoPlaylistId = video
-    ? new URL(video.url).searchParams.get("list")
-    : null;
-
-  console.log({ timerState });
-
   return (
     <div className="overflow-y-auto flex-1 pt-8">
       <div className="flex gap-4 w-full px-2">
@@ -151,10 +142,9 @@ export function Player({
       </div>
       <div className="relative h-full">
         <div ref={setVideoElem} className="w-full h-full" />
-        <div className="absolute top-0 left-0 w-full p-2 bg-black/25 flex">
+        <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center bg-black/25 flex opacity-0 hover:opacity-100">
           <Timer
-          timerState={timerState}
-            key={`${videoPlaylistId}:${audioPlaylistId}`}
+            timerState={timerState}
             duration={duration}
             onTimerStateChange={handleTimerStateChange}
           />
@@ -163,6 +153,7 @@ export function Player({
           <div className="w-1/4">
             <div className="text-sm font-semibold text-gray-400">Video</div>
             <PlayerProvider
+              isMuted
               state={timerState === "running" ? "playing" : "paused"}
               onStateChange={() => {}}
               source={video}
@@ -180,6 +171,7 @@ export function Player({
             <PlayerProvider
               state={timerState === "running" ? "playing" : "paused"}
               onStateChange={() => {}}
+              isShuffled
               source={audio}
               targetElem={audioElem}
             >
