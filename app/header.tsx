@@ -8,7 +8,7 @@ export async function Header() {
   const user = await getServerSessionUser();
 
   return (
-    <header className="px-2 py-4 flex">
+    <header className="px-2 py-4 flex bg-gray-700 border-b border-gray-600">
       <Breadcrumbs />
       <div className="ml-auto">
         {!user && (

@@ -1,50 +1,89 @@
 import { Fragment } from "react";
 import Link from "next/link";
+import clsx from "clsx";
 
 import { Sequence, helper } from "@/dbschema/interfaces";
-import { isBreak } from "@/utils";
+import { isBreak, secondsToPaddedHMS } from "@/utils";
+import { Row, Cell, HeaderCell } from "@/components/GridTable";
 
 import { AddSequence } from "./AddSequence";
 import { Actions } from "./Actions";
-import { Button } from "@/components/Button";
 
 type SimpleSequence = helper.Props<Sequence> &
   Pick<helper.Links<Sequence>, "steps">;
 
+const rowClass = clsx(
+  "border-gray-300 dark:border-gray-700",
+  "bg-white dark:bg-gray-800",
+  "text-gray-700 dark:text-gray-200"
+);
+
+const headerCellClass = clsx("text-gray-500 dark:text-gray-400");
+
 export function SequenceList({ sequences }: { sequences: SimpleSequence[] }) {
   return (
-    <div className="grid grid-cols-12 gap-2">
-      <div className="col-start-1 col-end-4">Sequence</div>
-      <div className="col-start-4 col-end-10">Steps</div>
-      <div className="col-start-10 col-end-13" />
-      <AddSequence />
+    <>
+      <Row className={clsx(rowClass, "mt-8")}>
+        <HeaderCell className={clsx(headerCellClass, "col-span-1")} />
+        <HeaderCell className={clsx(headerCellClass, "col-span-3")}>
+          Name
+        </HeaderCell>
+        <HeaderCell className={clsx(headerCellClass, "col-span-2")}>
+          Total
+        </HeaderCell>
+        <HeaderCell className={clsx(headerCellClass, "col-span-2")}>
+          Work
+        </HeaderCell>
+        <HeaderCell className={clsx(headerCellClass, "col-span-2")}>
+          Break
+        </HeaderCell>
+        <HeaderCell className={clsx(headerCellClass, "col-span-2")} />
+      </Row>
       {sequences.map((sequence) => (
         <SequenceRow key={sequence.id} sequence={sequence} />
       ))}
-    </div>
+      <Row className={clsx(rowClass, "dark:bg-gray-900")}>
+        <AddSequence />
+      </Row>
+    </>
   );
 }
 
 function SequenceRow({ sequence }: { sequence: SimpleSequence }) {
-  console.log(JSON.stringify({ sequence }, null, 2));
+  const totals = sequence.steps.reduce(
+    (acc, step) => {
+      const seconds = step.duration * 60;
+      if (isBreak(step)) {
+        acc.break += seconds;
+      } else {
+        acc.work += seconds;
+      }
+      acc.total += seconds;
+      return acc;
+    },
+    { total: 0, work: 0, break: 0 }
+  );
+
   return (
-    <>
-      <div className="col-start-1 col-span-3">
+    <Row className={rowClass}>
+      <Cell className="col-span-1" />
+      <Cell className="col-span-3">
         <Link className="underline" href={`/sequences/${sequence.id}`}>
           {sequence.name}
         </Link>
-      </div>
-      {sequence.steps.map((step, index) => (
-        <Fragment key={index}>
-          <div className="col-start-4 col-span-5">
-            {isBreak(step) ? "Break" : "Work"}
-          </div>
-          <div className="col-start-9 col-span-2">{step.duration}</div>
-        </Fragment>
-      ))}
-      <div className="col-start-11 col-end-13">
+      </Cell>
+      <Cell className="col-span-2">
+        {secondsToPaddedHMS(totals.total)}
+      </Cell>
+      <Cell className="col-span-2">
+        {secondsToPaddedHMS(totals.work)}
+      </Cell>
+      <Cell className="col-span-2">
+        {secondsToPaddedHMS(totals.break)}
+      </Cell>
+      <Cell className="col-span-2">
         <Actions id={sequence.id} />
-      </div>
-    </>
+      </Cell>
+    </Row>
   );
 }

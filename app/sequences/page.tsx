@@ -11,8 +11,7 @@ export default async function Sequences() {
 
   return (
     <>
-      <h1 className="px-2">Sequences</h1>
-      <div className="px-2 overflow-y-auto flex-1">
+      <div className="overflow-y-auto flex-1">
         <SequenceList sequences={sequences} />
       </div>
     </>

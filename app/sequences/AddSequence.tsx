@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { FormEvent, useState, useTransition } from "react";
+import { IconPlus } from "@tabler/icons-react";
 
 import {
   StepType,
@@ -13,6 +14,7 @@ import { Step, Behavior } from "@/dbschema/interfaces";
 import { Button } from "@/components/Button";
 import { Input } from "@/components/Input";
 import * as Disclosure from "@/components/Disclosure";
+import { Cell } from "@/components/GridTable";
 
 type UnsavedStep = Omit<Step, "id">;
 
@@ -40,17 +42,15 @@ function EditStep({
 
   const stepType = isBreak(step) ? "break" : "work";
 
-  console.log({ step, stepType });
-
   return (
     <>
-      <div className="col-start-4 col-span-5">
+      <Cell className="col-span-4">
         <select className="w-full" value={stepType} onChange={handleTypeChange}>
           <option value="work">Work</option>
           <option value="break">Break</option>
         </select>
-      </div>
-      <div className="col-start-9 col-span-2">
+      </Cell>
+      <Cell className="col-span-2">
         <Input
           aria-label="duration"
           type="number"
@@ -60,12 +60,12 @@ function EditStep({
           required
           onChange={handleDurationChange}
         />
-      </div>
-      <div className="col-start-11 col-end-13">
+      </Cell>
+      <Cell className="col-span-2">
         <Button type="button" onClick={() => onRemove(index)}>
           Remove
         </Button>
-      </div>
+      </Cell>
     </>
   );
 }
@@ -143,26 +143,32 @@ export function AddSequence() {
     >
       <>
         <Disclosure.Trigger asChild>
-          <div className="col-start-1 col-end-13">
-            <Button>{isShowingForm ? "Close" : "New Sequence"}</Button>
-          </div>
+          <Cell className="col-span-1 flex justify-end py-1">
+            <Button
+              className="bg-transparent dark:bg-transparent border-transparent dark:border-transparent"
+              aria-label="Add sequence"
+            >
+              <IconPlus size={16} />
+            </Button>
+          </Cell>
         </Disclosure.Trigger>
+        <Cell className="col-start-11 col-span-2">
+          <Button type="submit" disabled={isBusy}>
+            Save
+          </Button>
+        </Cell>
         <Disclosure.Content asChild>
           <form
-            className="grid grid-cols-12 gap-2 col-span-full"
+            className="grid grid-cols-12 col-span-full items-center"
             onSubmit={handleSubmit}
           >
-            <div className="col-start-1 col-span-3">Name</div>
-            <div className="col-start-4 col-span-5">Step type</div>
-            <div className="col-start-9 col-span-2">
-              Duration ({totalDuration})
-            </div>
-            <div className="col-start-11 col-end-13">
-              <Button type="submit" disabled={isBusy}>
-                Save
-              </Button>
-            </div>
-            <div className="col-start-1 col-span-3">
+            <Cell className="col-span-1" />
+            <Cell className="col-span-3">Name</Cell>
+            <Cell className="col-span-4">Step type</Cell>
+            <Cell className="col-span-2">Duration ({totalDuration})</Cell>
+            <Cell className="col-span-2" />
+            <Cell className="col-span-1" />
+            <Cell className="col-span-3">
               <Input
                 aria-label="name"
                 type="text"
@@ -170,7 +176,7 @@ export function AddSequence() {
                 required
                 onChange={(e) => setName(e.target.value)}
               />
-            </div>
+            </Cell>
             {steps.map((step, index) => (
               <EditStep
                 key={index}
@@ -180,11 +186,11 @@ export function AddSequence() {
                 onRemove={handleRemoteStep}
               />
             ))}
-            <div className="col-start-4 col-end-13">
+            <Cell className="col-start-5 col-end-13">
               <Button type="button" onClick={handleAddStep}>
                 Add Step
               </Button>
-            </div>
+            </Cell>
           </form>
         </Disclosure.Content>
       </>
