@@ -1,4 +1,4 @@
-import { ComponentProps } from "react";
+import { ComponentProps, forwardRef } from "react";
 import clsx from "clsx";
 
 export const rowClass = clsx(
@@ -11,14 +11,22 @@ export const cellClass = clsx("px-2 py-1 flex items-center tabular-nums");
 
 export const headerCellClass = clsx(cellClass, "text-xs font-medium");
 
-export function Row(props: ComponentProps<"div">) {
-  return <div {...props} className={clsx(rowClass, props.className)} />;
-}
+export const Row = forwardRef<HTMLDivElement, ComponentProps<"div">>(
+  ({ className, ...props }, ref) => {
+    return <div {...props} ref={ref} className={clsx(rowClass, className)} />;
+  }
+);
 
-export function Cell(props: ComponentProps<"div">) {
-  return <div {...props} className={clsx(cellClass, props.className)} />;
-}
+export const Cell = forwardRef<HTMLDivElement, ComponentProps<"div">>(
+  ({ className, ...props }, ref) => {
+    return <div {...props} ref={ref} className={clsx(cellClass, className)} />;
+  }
+);
 
-export function HeaderCell(props: ComponentProps<"div">) {
-  return <div {...props} className={clsx(headerCellClass, props.className)} />;
-}
+export const HeaderCell = forwardRef<HTMLDivElement, ComponentProps<"div">>(
+  ({ className, ...props }, ref) => {
+    return (
+      <div {...props} ref={ref} className={clsx(headerCellClass, className)} />
+    );
+  }
+);

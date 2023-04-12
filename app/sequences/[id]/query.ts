@@ -11,6 +11,7 @@ export const sequenceQuery = e.params(
       steps: {
         id: true,
         duration: true,
+        behaviors: true,
       },
 
       filter_single: e.op(sequence.id, "=", params.id),

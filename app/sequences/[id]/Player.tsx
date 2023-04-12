@@ -144,6 +144,7 @@ export function Player({
         <div ref={setVideoElem} className="w-full h-full" />
         <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center bg-black/25 flex opacity-0 hover:opacity-100">
           <Timer
+            key={step.id}
             timerState={timerState}
             duration={duration}
             onTimerStateChange={handleTimerStateChange}
@@ -154,7 +155,12 @@ export function Player({
             <div className="text-sm font-semibold text-gray-400">Video</div>
             <PlayerProvider
               isMuted
-              state={timerState === "running" ? "playing" : "paused"}
+              state={
+                timerState === "running" &&
+                !step.behaviors.includes("PAUSES_VIDEO")
+                  ? "playing"
+                  : "paused"
+              }
               onStateChange={() => {}}
               source={video}
               targetElem={videoElem}
@@ -169,7 +175,12 @@ export function Player({
           <div className="w-1/4 ml-auto">
             <div className="text-sm font-semibold text-gray-400">Audio</div>
             <PlayerProvider
-              state={timerState === "running" ? "playing" : "paused"}
+              state={
+                timerState === "running" &&
+                !step.behaviors.includes("PAUSES_AUDIO")
+                  ? "playing"
+                  : "paused"
+              }
               onStateChange={() => {}}
               isShuffled
               source={audio}
