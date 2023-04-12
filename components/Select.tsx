@@ -46,9 +46,7 @@ const Content = React.forwardRef<
       )}
       {...props}
     >
-      <SelectPrimitive.Viewport>
-        {children}
-      </SelectPrimitive.Viewport>
+      <SelectPrimitive.Viewport>{children}</SelectPrimitive.Viewport>
     </SelectPrimitive.Content>
   </SelectPrimitive.Portal>
 ));
@@ -81,9 +79,11 @@ const Item = React.forwardRef<
     )}
     {...props}
   >
-    <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
+    <SelectPrimitive.ItemText className="overflow-hidden text-ellipsis whitespace-nowrap">
+      {children}
+    </SelectPrimitive.ItemText>
 
-    <span className="absolute right-1">
+    <span className="ml-4 w-4">
       <SelectPrimitive.ItemIndicator>
         <IconCheck size={16} />
       </SelectPrimitive.ItemIndicator>
@@ -104,13 +104,4 @@ const Separator = React.forwardRef<
 ));
 Separator.displayName = SelectPrimitive.Separator.displayName;
 
-export {
-  Root,
-  Group,
-  Value,
-  Trigger,
-  Content,
-  Label,
-  Item,
-  Separator,
-};
+export { Root, Group, Value, Trigger, Content, Label, Item, Separator };

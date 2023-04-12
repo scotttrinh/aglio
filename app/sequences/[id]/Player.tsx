@@ -6,9 +6,11 @@ import { useRouter } from "next/navigation";
 
 import { Input } from "@/components/Input";
 import { Button } from "@/components/Button";
+import * as Select from "@/components/Select";
 
 import { Timer, TimerState } from "./Timer";
 import { VideoPlayer } from "./VideoPlayer";
+import { SourceCard } from "./SourceCard";
 import { Source, Step } from "./query";
 
 function AddSource({ onCreate }: { onCreate: (url: string) => void }) {
@@ -39,40 +41,20 @@ function AddSource({ onCreate }: { onCreate: (url: string) => void }) {
   };
 
   return (
-    <form className="flex gap-1" onSubmit={handleSourceCreate}>
-      <Input
-        ref={setInputElem}
-        type="text"
-        placeholder="YouTube Playlist URL"
-        value={sourceUrl}
-        onChange={(event) => setSourceUrl(event.target.value)}
-      />
-      <Button>Create</Button>
+    <form className="flex-1 flex gap-1" onSubmit={handleSourceCreate}>
+      <label className="flex flex-1 gap-1 items-center">
+        <div className="shrink-0">Add source</div>
+        <Input
+          className="flex-1"
+          ref={setInputElem}
+          type="text"
+          placeholder="YouTube Playlist URL"
+          value={sourceUrl}
+          onChange={(event) => setSourceUrl(event.target.value)}
+        />
+      </label>
+      <Button type="submit">Add</Button>
     </form>
-  );
-}
-
-function SourceSelection({
-  sources,
-  onSelect,
-}: {
-  sources: Source[];
-  onSelect: (playlistId: string | null) => void;
-}) {
-  return (
-    <div className="flex flex-col gap-1 flex-1">
-      <select
-        className="w-full"
-        onChange={(event) => onSelect(event.target.value || null)}
-      >
-        <option value="">Select a source</option>
-        {sources.map((source) => (
-          <option key={source.id} value={source.id}>
-            {source.title ?? source.url}
-          </option>
-        ))}
-      </select>
-    </div>
   );
 }
 
@@ -154,77 +136,58 @@ export function Player({
     : null;
 
   return (
-    <div className="overflow-y-auto flex-1">
-      <div className="flex gap-1 w-full">
+    <div className="overflow-y-auto flex-1 pt-8">
+      <div className="flex gap-4 w-full px-2">
         <div className="flex gap-1 flex-1">
           <AddSource onCreate={handleSourceCreate} />
         </div>
         {createSourceError && (
           <div className="bg-red-500 text-white p-2">{createSourceError}</div>
         )}
-        <div className="flex gap-1 flex-1">
-          <div>Video</div>
-          <SourceSelection
-            sources={sources}
-            onSelect={(maybeSourceId) => {
-              if (!maybeSourceId) {
-                setVideo(null);
-                return;
-              }
-
-              const found =
-                sources.find((source) => source.id === maybeSourceId) ?? null;
-              if (found) {
-                setVideo(found);
-              }
-            }}
+      </div>
+      <div className="relative h-full">
+        {videoPlaylistId && (
+          <VideoPlayer src={videoPlaylistId} isPlaying={isPlaying} isMuted />
+        )}
+        <div className="absolute top-0 left-0 w-full p-2 bg-black/25 flex">
+          <Timer
+            key={`${videoPlaylistId}:${audioPlaylistId}`}
+            duration={duration}
+            onTimerStateChange={handleTimerStateChange}
           />
         </div>
-        <div className="flex gap-1 flex-1">
-          <div>Audio</div>
-          <SourceSelection
-            sources={sources}
-            onSelect={(maybeSourceId) => {
-              if (!maybeSourceId) {
-                setVideo(null);
-                return;
-              }
-
-              const found =
-                sources.find((source) => source.id === maybeSourceId) ?? null;
-              if (found) {
-                setAudio(found);
-              }
-            }}
-          />
+        <div className="absolute bottom-0 left-0 w-full p-2 bg-black/75 flex">
+          <div className="w-1/4">
+            <div className="text-sm font-semibold text-gray-400">Video</div>
+            <SourceCard
+              source={video}
+              onSourceChange={setVideo}
+              sources={sources}
+              sourceState="playing"
+              progress={10}
+              duration={100}
+              onToggleState={() => {}}
+              onNext={() => {}}
+              onPrevious={() => {}}
+            />
+          </div>
+          <div className="w-1/4 ml-auto">
+            <div className="text-sm font-semibold text-gray-400">Audio</div>
+            <SourceCard
+              source={audio}
+              onSourceChange={setAudio}
+              sources={sources}
+              sourceState="playing"
+              progress={10}
+              duration={100}
+              onToggleState={() => {}}
+              onNext={() => {}}
+              onPrevious={() => {}}
+            />
+          </div>
         </div>
       </div>
-      {videoPlaylistId && audioPlaylistId && (
-        <>
-          <div className="relative h-full">
-            <VideoPlayer
-              key={videoPlaylistId}
-              src={videoPlaylistId}
-              isPlaying={isPlaying}
-              isMuted
-            />
-            <div className="absolute bottom-0 left-0 w-full p-8 bg-black/25 text-2xl">
-              <Timer
-                key={`${videoPlaylistId}:${audioPlaylistId}`}
-                duration={duration}
-                onTimerStateChange={handleTimerStateChange}
-              />
-            </div>
-          </div>
-          <div className="h-full">
-            <VideoPlayer
-              key={audioPlaylistId}
-              src={audioPlaylistId}
-              isPlaying={isPlaying}
-            />
-          </div>
-        </>
-      )}
+      <div className="h-full" />
     </div>
   );
 }
