@@ -141,7 +141,9 @@ export function Player({
         )}
       </div>
       <div className="relative h-full">
-        <div ref={setVideoElem} className="w-full h-full" />
+        <div className="w-full h-full">
+          <div ref={setVideoElem} className="w-full h-full" />
+        </div>
         <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center bg-black/25 flex opacity-0 hover:opacity-100">
           <Timer
             key={step.id}
@@ -193,7 +195,9 @@ export function Player({
               />
               {audioPortalTargetElem &&
                 createPortal(
-                  <div ref={setAudioElem} className="w-full h-full" />,
+                  <div className="w-full h-full">
+                    <div ref={setAudioElem} className="w-full h-full" />
+                  </div>,
                   audioPortalTargetElem
                 )}
             </PlayerProvider>
