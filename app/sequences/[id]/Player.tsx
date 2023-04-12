@@ -9,7 +9,6 @@ import { Button } from "@/components/Button";
 import * as Select from "@/components/Select";
 
 import { Timer, TimerState } from "./Timer";
-import { VideoPlayer } from "./VideoPlayer";
 import { SourceCard } from "./SourceCard";
 import { Source, Step } from "./query";
 import { createPortal } from "react-dom";
@@ -68,7 +67,9 @@ export function Player({
   sources: Source[];
 }) {
   const [audioElem, setAudioElem] = useState<HTMLDivElement | null>(null);
+
   const [videoElem, setVideoElem] = useState<HTMLDivElement | null>(null);
+
   const [audioPortalTargetElem, setAudioPortalTargetElem] =
     useState<HTMLDivElement | null>(null);
 
@@ -82,24 +83,18 @@ export function Player({
 
   const [stepIndex, setStepIndex] = useState(0);
 
-  const [isPlaying, setIsPlaying] = useState(false);
+  const [timerState, setTimerState] = useState<TimerState>("paused");
 
   const router = useRouter();
 
   const handleTimerStateChange = useCallback((timerState: TimerState) => {
-    match(timerState)
-      .with("running", () => {
-        setIsPlaying(true);
-      })
-      .with("paused", () => {
-        setIsPlaying(false);
-      })
-      .with("ended", () => {
-        setStepIndex((stepIndex) =>
-          stepIndex === steps.length - 1 ? 0 : stepIndex + 1
-        );
-      })
-      .exhaustive();
+    setTimerState(timerState);
+    if (timerState === "ended") {
+      setStepIndex((stepIndex) =>
+        stepIndex === steps.length - 1 ? 0 : stepIndex + 1
+      );
+      setTimerState("running");
+    }
   }, []);
 
   const handleSourceCreate = async (url: string) => {
@@ -142,6 +137,8 @@ export function Player({
     ? new URL(video.url).searchParams.get("list")
     : null;
 
+  console.log({ timerState });
+
   return (
     <div className="overflow-y-auto flex-1 pt-8">
       <div className="flex gap-4 w-full px-2">
@@ -156,6 +153,7 @@ export function Player({
         <div ref={setVideoElem} className="w-full h-full" />
         <div className="absolute top-0 left-0 w-full p-2 bg-black/25 flex">
           <Timer
+          timerState={timerState}
             key={`${videoPlaylistId}:${audioPlaylistId}`}
             duration={duration}
             onTimerStateChange={handleTimerStateChange}
@@ -164,7 +162,12 @@ export function Player({
         <div className="absolute bottom-0 left-0 w-full p-2 bg-black/75 flex">
           <div className="w-1/4">
             <div className="text-sm font-semibold text-gray-400">Video</div>
-            <PlayerProvider source={video} targetElem={videoElem}>
+            <PlayerProvider
+              state={timerState === "running" ? "playing" : "paused"}
+              onStateChange={() => {}}
+              source={video}
+              targetElem={videoElem}
+            >
               <SourceCard
                 source={video}
                 onSourceChange={setVideo}
@@ -174,7 +177,12 @@ export function Player({
           </div>
           <div className="w-1/4 ml-auto">
             <div className="text-sm font-semibold text-gray-400">Audio</div>
-            <PlayerProvider source={audio} targetElem={audioElem}>
+            <PlayerProvider
+              state={timerState === "running" ? "playing" : "paused"}
+              onStateChange={() => {}}
+              source={audio}
+              targetElem={audioElem}
+            >
               <SourceCard
                 source={audio}
                 onSourceChange={setAudio}

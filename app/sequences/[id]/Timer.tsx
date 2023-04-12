@@ -1,5 +1,3 @@
-"use client";
-
 import { useCallback, useEffect, useState } from "react";
 
 import { secondsToPaddedHMS } from "@/utils";
@@ -11,20 +9,21 @@ function useTimer({
   offset = 0,
   onTick,
   onEnd,
-  initialTimerState = "paused",
+  timerState,
+  onTimerStateChange,
 }: {
   offset?: number;
   onTick?: (time: number) => void;
   onEnd?: () => void;
-  initialTimerState?: TimerState;
+  timerState: TimerState;
+  onTimerStateChange: (state: TimerState) => void;
 }) {
   const [time, setTime] = useState(offset);
-  const [timerState, setTimerState] = useState<TimerState>(initialTimerState);
   const [intervalId, setIntervalId] = useState<NodeJS.Timer | null>(null);
 
   useEffect(() => {
     if (time === 0) {
-      setTimerState("ended");
+      onTimerStateChange("ended");
       if (onEnd) {
         onEnd();
       }
@@ -35,7 +34,7 @@ function useTimer({
     if (["running", "ended"].includes(timerState)) {
       return;
     }
-    setTimerState("running");
+    onTimerStateChange("running");
     const intervalId = setInterval(() => {
       setTime((time) => {
         if (onTick) {
@@ -51,35 +50,31 @@ function useTimer({
     if (["paused", "ended"].includes(timerState)) {
       return;
     }
-    setTimerState("paused");
+    onTimerStateChange("paused");
     if (intervalId) clearInterval(intervalId);
   }, [timerState, intervalId]);
-
-  const reset = useCallback(() => {
-    setTimerState(initialTimerState);
-    setTime(offset);
-    if (intervalId) clearInterval(intervalId);
-  }, [initialTimerState, offset, intervalId]);
 
   return {
     time,
     timerState,
     start,
     pause,
-    reset,
   };
 }
 
 export function Timer({
   duration,
+  timerState,
   onTimerStateChange,
 }: {
   duration: number;
-  onTimerStateChange?: (timerState: TimerState) => void;
+  timerState: TimerState;
+  onTimerStateChange: (timerState: TimerState) => void;
 }) {
-  const { time, timerState, start, pause, reset } = useTimer({
+  const { time, start, pause } = useTimer({
     offset: duration * 60,
-    initialTimerState: "paused",
+    timerState,
+    onTimerStateChange,
   });
 
   useEffect(() => {
@@ -89,12 +84,9 @@ export function Timer({
   }, [timerState, onTimerStateChange]);
 
   const elapsedSeconds = duration * 60 - time;
-  const elapsedTimeMinutesAndSeconds =
-    secondsToPaddedHMS(elapsedSeconds);
+  const elapsedTimeMinutesAndSeconds = secondsToPaddedHMS(elapsedSeconds);
   const timeLeftMinutesAndSeconds = secondsToPaddedHMS(time);
-  const totalTimeMinutesAndSeconds = secondsToPaddedHMS(
-    duration * 60
-  );
+  const totalTimeMinutesAndSeconds = secondsToPaddedHMS(duration * 60);
 
   return (
     <>
@@ -106,7 +98,6 @@ export function Timer({
       </div>
       {timerState === "paused" && <Button onClick={start}>Start</Button>}
       {timerState === "running" && <Button onClick={pause}>Pause</Button>}
-      <Button onClick={reset}>Reset</Button>
     </>
   );
 }

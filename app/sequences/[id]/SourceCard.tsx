@@ -4,8 +4,6 @@ import { Slider } from "@/components/Slider";
 
 import { Source } from "./query";
 import {
-  IconPlayerPauseFilled,
-  IconPlayerPlayFilled,
   IconPlayerSkipBackFilled,
   IconPlayerSkipForwardFilled,
 } from "@tabler/icons-react";
@@ -21,7 +19,7 @@ export function SourceCard({
   sources: Source[];
   onSourceChange: (source: Source) => void;
 }) {
-    const player = usePlayer();
+  const player = usePlayer();
   return (
     <div className="flex flex-col gap-2">
       <div className="flex flex-col gap-2">
@@ -44,13 +42,6 @@ export function SourceCard({
           <div className="flex flex-row gap-1 items-center tabular-nums">
             <Button onClick={player.previous} aria-label="Previous">
               <IconPlayerSkipBackFilled size={12} />
-            </Button>
-            <Button onClick={player.state === "playing" ? player.pause : player.play} disabled={!source}>
-              {player.state === "playing" ? (
-                <IconPlayerPauseFilled size={12} />
-              ) : (
-                <IconPlayerPlayFilled size={12} />
-              )}
             </Button>
             <span className="text-xs text-gray-200">
               {secondsToPaddedHMS(player.progress)}
@@ -84,13 +75,16 @@ function SourceSelection({
   sources: Source[];
   onSelect: (playlistId: string | null) => void;
 }) {
-    const sourceTitle = source?.title ?? source?.url ?? "Select a source";
+  const sourceTitle = source?.title ?? source?.url ?? "Select a source";
   return (
     <div className="flex flex-col gap-1 flex-1 overflow-hidden">
       <Select.Root value={source?.id} onValueChange={onSelect}>
         <Select.Trigger>
           <Select.Value asChild>
-            <span className="overflow-hidden overflow-ellipsis whitespace-nowrap" title={sourceTitle}>
+            <span
+              className="overflow-hidden overflow-ellipsis whitespace-nowrap"
+              title={sourceTitle}
+            >
               {sourceTitle}
             </span>
           </Select.Value>

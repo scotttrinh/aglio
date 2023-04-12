@@ -11,8 +11,10 @@ import { YouTubePlayer } from "react-youtube";
 
 import { Source } from "./query";
 
+type PlayerState = "playing" | "paused";
+
 interface ContextValue {
-  state: "playing" | "paused";
+  state: PlayerState;
   progress: number;
   duration: number;
   mute: () => void;
@@ -29,25 +31,28 @@ const PlayerContext = createContext<ContextValue | null>(null);
 
 export function PlayerProvider({
   children,
+  state,
+  onStateChange,
   source,
   targetElem,
 }: {
   children: React.ReactNode;
+  state: PlayerState;
+  onStateChange: (state: PlayerState) => void;
   source: Source | null;
   targetElem: HTMLElement | null;
 }) {
-  const [state, setState] = useState<"playing" | "paused">("paused");
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
   const [player, setPlayer] = useState<YouTubePlayer | null>(null);
 
   const play = useCallback(() => {
-    setState("playing");
-  }, []);
+    onStateChange("playing");
+  }, [onStateChange]);
 
   const pause = useCallback(() => {
-    setState("paused");
-  }, []);
+    onStateChange("paused");
+  }, [onStateChange]);
 
   const seek = useCallback(
     (progress: number) => {
