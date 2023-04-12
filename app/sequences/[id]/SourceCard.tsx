@@ -10,28 +10,18 @@ import {
   IconPlayerSkipForwardFilled,
 } from "@tabler/icons-react";
 import { secondsToPaddedHMS } from "@/utils";
+import { usePlayer } from "./PlayerContext";
 
 export function SourceCard({
   source,
   sources,
   onSourceChange,
-  sourceState,
-  progress,
-  duration,
-  onToggleState,
-  onNext,
-  onPrevious,
 }: {
   source: Source | null;
   sources: Source[];
   onSourceChange: (source: Source) => void;
-  sourceState: "playing" | "paused";
-  progress: number;
-  duration: number;
-  onToggleState: () => void;
-  onNext: () => void;
-  onPrevious: () => void;
 }) {
+    const player = usePlayer();
   return (
     <div className="flex flex-col gap-2">
       <div className="flex flex-col gap-2">
@@ -51,31 +41,31 @@ export function SourceCard({
           />
         </div>
         <div className="flex flex-col gap-1">
-          <div className="flex flex-row gap-1 items-center">
-            <Button onClick={onPrevious} aria-label="Previous">
+          <div className="flex flex-row gap-1 items-center tabular-nums">
+            <Button onClick={player.previous} aria-label="Previous">
               <IconPlayerSkipBackFilled size={12} />
             </Button>
-            <Button onClick={onToggleState} disabled={!source}>
-              {sourceState === "playing" ? (
+            <Button onClick={player.state === "playing" ? player.pause : player.play} disabled={!source}>
+              {player.state === "playing" ? (
                 <IconPlayerPauseFilled size={12} />
               ) : (
                 <IconPlayerPlayFilled size={12} />
               )}
             </Button>
             <span className="text-xs text-gray-200">
-              {secondsToPaddedHMS(progress)}
+              {secondsToPaddedHMS(player.progress)}
             </span>
             <div className="flex-1">
               <Slider
-                value={[progress]}
-                onValueChange={() => {}}
-                max={duration}
+                value={[player.progress]}
+                onValueChange={([position]) => player.seek(position)}
+                max={player.duration}
               />
             </div>
             <span className="text-xs text-gray-200">
-              {secondsToPaddedHMS(duration)}
+              {secondsToPaddedHMS(player.duration)}
             </span>
-            <Button onClick={onNext} aria-label="Next">
+            <Button onClick={player.next} aria-label="Next">
               <IconPlayerSkipForwardFilled size={12} />
             </Button>
           </div>
@@ -94,13 +84,14 @@ function SourceSelection({
   sources: Source[];
   onSelect: (playlistId: string | null) => void;
 }) {
+    const sourceTitle = source?.title ?? source?.url ?? "Select a source";
   return (
     <div className="flex flex-col gap-1 flex-1 overflow-hidden">
       <Select.Root value={source?.id} onValueChange={onSelect}>
         <Select.Trigger>
           <Select.Value asChild>
-            <span className="overflow-hidden overflow-ellipsis whitespace-nowrap">
-              {source?.title ?? source?.url ?? "Select a source"}
+            <span className="overflow-hidden overflow-ellipsis whitespace-nowrap" title={sourceTitle}>
+              {sourceTitle}
             </span>
           </Select.Value>
         </Select.Trigger>

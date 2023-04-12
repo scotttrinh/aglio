@@ -12,6 +12,8 @@ import { Timer, TimerState } from "./Timer";
 import { VideoPlayer } from "./VideoPlayer";
 import { SourceCard } from "./SourceCard";
 import { Source, Step } from "./query";
+import { createPortal } from "react-dom";
+import { PlayerProvider } from "./PlayerContext";
 
 function AddSource({ onCreate }: { onCreate: (url: string) => void }) {
   const [inputElem, setInputElem] = useState<HTMLInputElement | null>(null);
@@ -65,6 +67,11 @@ export function Player({
   steps: Step[];
   sources: Source[];
 }) {
+  const [audioElem, setAudioElem] = useState<HTMLDivElement | null>(null);
+  const [videoElem, setVideoElem] = useState<HTMLDivElement | null>(null);
+  const [audioPortalTargetElem, setAudioPortalTargetElem] =
+    useState<HTMLDivElement | null>(null);
+
   const [createSourceError, setCreateSourceError] = useState<string | null>(
     null
   );
@@ -146,9 +153,7 @@ export function Player({
         )}
       </div>
       <div className="relative h-full">
-        {videoPlaylistId && (
-          <VideoPlayer src={videoPlaylistId} isPlaying={isPlaying} isMuted />
-        )}
+        <div ref={setVideoElem} className="w-full h-full" />
         <div className="absolute top-0 left-0 w-full p-2 bg-black/25 flex">
           <Timer
             key={`${videoPlaylistId}:${audioPlaylistId}`}
@@ -159,35 +164,32 @@ export function Player({
         <div className="absolute bottom-0 left-0 w-full p-2 bg-black/75 flex">
           <div className="w-1/4">
             <div className="text-sm font-semibold text-gray-400">Video</div>
-            <SourceCard
-              source={video}
-              onSourceChange={setVideo}
-              sources={sources}
-              sourceState="playing"
-              progress={10}
-              duration={100}
-              onToggleState={() => {}}
-              onNext={() => {}}
-              onPrevious={() => {}}
-            />
+            <PlayerProvider source={video} targetElem={videoElem}>
+              <SourceCard
+                source={video}
+                onSourceChange={setVideo}
+                sources={sources}
+              />
+            </PlayerProvider>
           </div>
           <div className="w-1/4 ml-auto">
             <div className="text-sm font-semibold text-gray-400">Audio</div>
-            <SourceCard
-              source={audio}
-              onSourceChange={setAudio}
-              sources={sources}
-              sourceState="playing"
-              progress={10}
-              duration={100}
-              onToggleState={() => {}}
-              onNext={() => {}}
-              onPrevious={() => {}}
-            />
+            <PlayerProvider source={audio} targetElem={audioElem}>
+              <SourceCard
+                source={audio}
+                onSourceChange={setAudio}
+                sources={sources}
+              />
+              {audioPortalTargetElem &&
+                createPortal(
+                  <div ref={setAudioElem} className="w-full h-full" />,
+                  audioPortalTargetElem
+                )}
+            </PlayerProvider>
           </div>
         </div>
       </div>
-      <div className="h-full" />
+      <div ref={setAudioPortalTargetElem} className="h-full" />
     </div>
   );
 }
