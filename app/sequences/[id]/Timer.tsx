@@ -1,69 +1,54 @@
-import { useCallback, useEffect, useState } from "react";
-
-import { secondsToPaddedHMS } from "@/utils";
-import { Button } from "@/components/Button";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   IconPlayerPauseFilled,
   IconPlayerPlayFilled,
 } from "@tabler/icons-react";
 
+import { secondsToPaddedHMS } from "@/utils";
+import { Button } from "@/components/Button";
+
 export type TimerState = "running" | "paused" | "ended";
 
 function useTimer({
   offset = 0,
-  onTick,
-  onEnd,
   timerState,
   onTimerStateChange,
 }: {
   offset?: number;
-  onTick?: (time: number) => void;
-  onEnd?: () => void;
   timerState: TimerState;
   onTimerStateChange: (state: TimerState) => void;
 }) {
   const [time, setTime] = useState(offset);
-  const [intervalId, setIntervalId] = useState<NodeJS.Timer | null>(null);
+  const intervalId = useRef<NodeJS.Timeout | null>(null);
 
-  useEffect(() => {
-    if (time === 0) {
-      onTimerStateChange("ended");
-      if (onEnd) {
-        onEnd();
+  useEffect(
+    function handleEnd() {
+      if (time === 0) {
+        onTimerStateChange("ended");
+        setTime(offset);
       }
-    }
-  }, [time]);
+    },
+    [time, onTimerStateChange]
+  );
 
-  const start = useCallback(() => {
-    if (["running", "ended"].includes(timerState)) {
-      return;
-    }
-    onTimerStateChange("running");
-    const intervalId = setInterval(() => {
-      setTime((time) => {
-        if (onTick) {
-          onTick(time);
-        }
-        return time - 1;
-      });
-    }, 1000);
-    setIntervalId(intervalId);
-  }, [timerState, onTick, onEnd]);
+  useEffect(
+    function syncPlayerState() {
+      if (timerState === "running") {
+        if (intervalId.current) clearInterval(intervalId.current);
 
-  const pause = useCallback(() => {
-    if (["paused", "ended"].includes(timerState)) {
-      return;
-    }
-    onTimerStateChange("paused");
-    if (intervalId) clearInterval(intervalId);
-  }, [timerState, intervalId]);
+        intervalId.current = setInterval(() => {
+          setTime((time) => {
+            return time - 1;
+          });
+        }, 1000);
+      } else if (timerState === "paused") {
+        if (intervalId.current) clearInterval(intervalId.current);
+      }
+    },
+    [timerState, onTimerStateChange]
+  );
 
-  return {
-    time,
-    timerState,
-    start,
-    pause,
-  };
+  return { time };
 }
 
 export function Timer({
@@ -75,17 +60,12 @@ export function Timer({
   timerState: TimerState;
   onTimerStateChange: (timerState: TimerState) => void;
 }) {
-  const { time, start, pause } = useTimer({
+  const { time } = useTimer({
     offset: duration * 60,
     timerState,
     onTimerStateChange,
   });
-
-  useEffect(() => {
-    if (onTimerStateChange) {
-      onTimerStateChange(timerState);
-    }
-  }, [timerState, onTimerStateChange]);
+  console.log({ time, duration, timerState });
 
   const elapsedSeconds = duration * 60 - time;
   const elapsedTimeMinutesAndSeconds = secondsToPaddedHMS(elapsedSeconds);
@@ -101,12 +81,12 @@ export function Timer({
         <div className="ml-auto">-{timeLeftMinutesAndSeconds}</div>
       </div>
       {timerState === "paused" && (
-        <Button onClick={start}>
+        <Button onClick={() => onTimerStateChange("running")}>
           <IconPlayerPlayFilled size={56} />
         </Button>
       )}
       {timerState === "running" && (
-        <Button onClick={pause}>
+        <Button onClick={() => onTimerStateChange("paused")}>
           <IconPlayerPauseFilled size={56} />
         </Button>
       )}
