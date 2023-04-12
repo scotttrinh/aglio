@@ -7,7 +7,7 @@ export const rowClass = clsx(
   "first-of-type:border-t"
 );
 
-export const cellClass = clsx("px-2 py-1", "flex items-center");
+export const cellClass = clsx("px-2 py-1 flex items-center tabular-nums");
 
 export const headerCellClass = clsx(cellClass, "text-xs font-medium");
 
