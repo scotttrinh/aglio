@@ -28,7 +28,7 @@
         packages = with pkgs; [
           nodejs
           edgedb
-          nodePackages_latest.vercel
+          nodePackages.vercel
         ];
 
         shellHook = ''
