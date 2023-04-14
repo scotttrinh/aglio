@@ -25,7 +25,11 @@
     in
     {
       devShell = pkgs.mkShell {
-        packages = with pkgs; [ nodejs edgedb ];
+        packages = with pkgs; [
+          nodejs
+          edgedb
+          nodePackages_latest.vercel
+        ];
 
         shellHook = ''
           echo "node `${pkgs.nodejs}/bin/node --version`"
