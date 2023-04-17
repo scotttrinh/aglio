@@ -16,6 +16,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: edgedb/setup-edgedb@v1
         with:
+          cli-version: nightly
           server-version: none
       - name: Migrate EdgeDB
         run: edgedb migration apply
