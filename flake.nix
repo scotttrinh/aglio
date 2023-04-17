@@ -19,8 +19,8 @@
         src = pkgs.fetchFromGitHub {
           owner = "edgedb";
           repo = "edgedb-cli";
-          rev = "1f8e56795992a7539c9345e0b3cbce45e375d5a8";
-          sha256 = "sha256-DKMsjnp6Xc44s2ImLll66ziD5V6fxScV+ZmuLJr91ME=";
+          rev = "01bb835e92fcdfce73df18d2daf3940249e51cde";
+          sha256 = "sha256-V+tzx9k9uL/E2MzEGLqQa4R7uC7SU7S+2P2zT58AxLQ=";
           fetchSubmodules = true;
         };
         cargoDeps = pkgs.rustPlatform.importCargoLock {
