@@ -1,0 +1,27 @@
+name: Vercel Production Deployment
+env:
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+  EDGEDB_INSTANCE: ${{ secrets.EDGEDB_INSTANCE }}
+  EDGEDB_SECRET_KEY: ${{ secrets.EDGEDB_SECRET_KEY }}
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy-prod:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: edgedb/setup-edgedb@v1
+        with:
+          server-version: none
+      - name: Migrate EdgeDB
+        run: edgedb migration apply
+      - name: Deploy to Vercel
+        run: |
+          npm install --global vercel@latest
+          vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+          vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+          vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
