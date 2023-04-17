@@ -7,7 +7,7 @@ import { SequenceList } from "./SequenceList";
 
 export default async function Sequences() {
   const user = await getServerSessionUser();
-  const sequences = await sequenceQuery.run(client, { userId: user!.id });
+  const sequences = await sequenceQuery.run(client.withGlobals({ current_user: user!.id }));
 
   return (
     <>
