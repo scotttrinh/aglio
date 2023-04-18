@@ -4,7 +4,7 @@ import { getServerSessionUser } from "@/getServerSessionUser";
 
 import { Breadcrumbs } from "./Breadcrumbs";
 
-export async function Header() {
+export const Header = (async function Header() {
   const user = await getServerSessionUser();
 
   return (
@@ -24,4 +24,4 @@ export async function Header() {
       </div>
     </header>
   );
-}
+} as unknown as () => JSX.Element)

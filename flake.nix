@@ -4,17 +4,27 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
+    npmlock2nix = {
+      url = "github:nix-community/npmlock2nix";
+      flake = false;
+    };
   };
 
   outputs =
     { self
     , nixpkgs
     , flake-utils
+    , npmlock2nix
     }:
 
     flake-utils.lib.eachDefaultSystem (system:
     let
-      pkgs = import nixpkgs { inherit system; };
+      overlays = [
+        (final: prev: {
+          npmlock2nix = import npmlock2nix { pkgs = prev; };
+        })
+      ];
+      pkgs = import nixpkgs { inherit overlays system; };
       edgedb-dev = pkgs.edgedb.overrideAttrs (oldAttrs: rec {
         src = pkgs.fetchFromGitHub {
           owner = "edgedb";
@@ -38,18 +48,67 @@
           sed -i '/^\[package\]/a build = false' Cargo.toml
         '';
       });
+      buildInputs = with pkgs; [
+        nodejs-18_x
+      ];
+      devInputs = with pkgs; [
+        edgedb-dev
+        nodePackages.vercel
+        packer
+        terraform
+      ];
     in
     {
       devShell = pkgs.mkShell {
-        packages = with pkgs; [
-          nodejs-18_x
-          edgedb-dev
-          nodePackages.vercel
-        ];
+        packages = buildInputs ++ devInputs;
 
         shellHook = ''
           echo "node `${pkgs.nodejs-18_x}/bin/node --version`"
+          echo "`${edgedb-dev}/bin/edgedb --version`"
+          echo "`${edgedb-dev}/bin/edgedb instance list`"
         '';
+      };
+
+      packages = {
+        aglio = pkgs.stdenv.mkDerivation {
+          inherit buildInputs;
+
+          name = "aglio";
+          src = ./.;
+
+          buildPhase = ''
+            export HOME=$(mktemp -d)
+            npm install
+            npm run build
+          '';
+
+          installPhase = ''
+            mv -r .next $out
+          '';
+        };
+
+        aglio-container = with pkgs.dockerTools; buildImage {
+          name = "aglio";
+          tag = "latest";
+          created = "now";
+
+          copyToRoot = pkgs.buildEnv {
+            name = "image-root";
+            paths = [
+              aglio
+              binSh
+              pkgs.nodejs-18_x
+            ];
+            pathsToLink = [ "/bin" ];
+          };
+
+          config = {
+            Cmd = [ "sh" "-c" "node /app/.next/server/server.js" ];
+            ExposedPorts = {
+              "3000/tcp" = {};
+            };
+          };
+        };
       };
     });
 }

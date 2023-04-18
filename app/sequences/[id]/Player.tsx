@@ -1,12 +1,10 @@
 "use client";
 
 import { useCallback, useState, FormEvent } from "react";
-import { match } from "ts-pattern";
 import { useRouter } from "next/navigation";
 
 import { Input } from "@/components/Input";
 import { Button } from "@/components/Button";
-import * as Select from "@/components/Select";
 
 import { Timer, TimerState } from "./Timer";
 import { SourceCard } from "./SourceCard";
@@ -87,15 +85,18 @@ export function Player({
 
   const router = useRouter();
 
-  const handleTimerStateChange = useCallback((timerState: TimerState) => {
-    setTimerState(timerState);
-    if (timerState === "ended") {
-      setStepIndex((stepIndex) =>
-        stepIndex === steps.length - 1 ? 0 : stepIndex + 1
-      );
-      setTimerState("running");
-    }
-  }, []);
+  const handleTimerStateChange = useCallback(
+    (timerState: TimerState) => {
+      setTimerState(timerState);
+      if (timerState === "ended") {
+        setStepIndex((stepIndex) =>
+          stepIndex === steps.length - 1 ? 0 : stepIndex + 1
+        );
+        setTimerState("running");
+      }
+    },
+    [steps.length]
+  );
 
   const handleSourceCreate = async (url: string) => {
     // Use fetch to call API with the new playlist URL and check for any HTTP errors

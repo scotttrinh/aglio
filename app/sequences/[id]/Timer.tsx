@@ -28,7 +28,7 @@ function useTimer({
         setTime(offset);
       }
     },
-    [time, onTimerStateChange]
+    [time, onTimerStateChange, offset]
   );
 
   useEffect(

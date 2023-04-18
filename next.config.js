@@ -4,6 +4,7 @@ const nextConfig = {
     appDir: true,
     serverComponentsExternalPackages: ["node-fetch"],
   },
-}
+  output: "standalone",
+};
 
-module.exports = nextConfig
+module.exports = nextConfig;

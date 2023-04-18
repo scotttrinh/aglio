@@ -16,12 +16,14 @@ export const Row = forwardRef<HTMLDivElement, ComponentProps<"div">>(
     return <div {...props} ref={ref} className={clsx(rowClass, className)} />;
   }
 );
+Row.displayName = "GridTableRow";
 
 export const Cell = forwardRef<HTMLDivElement, ComponentProps<"div">>(
   ({ className, ...props }, ref) => {
     return <div {...props} ref={ref} className={clsx(cellClass, className)} />;
   }
 );
+Cell.displayName = "GridTableCell";
 
 export const HeaderCell = forwardRef<HTMLDivElement, ComponentProps<"div">>(
   ({ className, ...props }, ref) => {
@@ -30,3 +32,4 @@ export const HeaderCell = forwardRef<HTMLDivElement, ComponentProps<"div">>(
     );
   }
 );
+HeaderCell.displayName = "GridTableHeaderCell";

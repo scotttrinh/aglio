@@ -1,6 +1,7 @@
 import * as Select from "@/components/Select";
 import { Button } from "@/components/Button";
 import { Slider } from "@/components/Slider";
+import Image from "next/image";
 
 import { Source } from "./query";
 import {
@@ -25,7 +26,11 @@ export function SourceCard({
       <div className="flex flex-col gap-2">
         <div className="flex gap-1">
           {source?.thumbnail && (
-            <img src={source.thumbnail} className="w-8 h-8 rounded-sm" />
+            <Image
+              src={source.thumbnail}
+              alt={source?.title ?? "Source thumbnail"}
+              className="w-8 h-8 rounded-sm"
+            />
           )}
           <SourceSelection
             source={source}

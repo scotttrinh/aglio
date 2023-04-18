@@ -5,7 +5,7 @@ import e from "@/dbschema/edgeql-js";
 import { client } from "@/edgedb";
 import { getServerSessionUser } from "@/getServerSessionUser";
 
-export const PostBody = z.object({
+const PostBody = z.object({
   name: z.string(),
   steps: z.array(
     z.object({
@@ -14,7 +14,7 @@ export const PostBody = z.object({
     })
   ),
 });
-export type PostBody = z.infer<typeof PostBody>;
+type PostBody = z.infer<typeof PostBody>;
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const user = await getServerSessionUser();

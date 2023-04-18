@@ -20,18 +20,18 @@ export function YouTubePlaylist({
       return;
     }
 
-    setPlayer(
-      makeYouTubePlayer(divElem, {
-        playerVars: {
-          list: src,
-          listType: "playlist",
-          modestbranding: 1,
-        },
-      })
-    );
+    const newPlayer = makeYouTubePlayer(divElem, {
+      playerVars: {
+        list: src,
+        listType: "playlist",
+        modestbranding: 1,
+      },
+    });
+
+    setPlayer(newPlayer);
 
     return () => {
-      player?.destroy();
+      newPlayer.destroy();
       setDivElem(null);
     };
   }, [src, divElem]);

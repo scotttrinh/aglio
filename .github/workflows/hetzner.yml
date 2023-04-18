@@ -1,0 +1,76 @@
+name: Deploy to Hetzner
+
+on:
+  push:
+    branches:
+      - main
+      - 'deploy/**'
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Add server public key to known_hosts
+        env:
+          SERVER_IP: ${{ secrets.SERVER_IP }}
+          DEPLOY_SSH_PUBLIC_KEY: ${{ secrets.DEPLOY_SSH_PUBLIC_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SERVER_IP $DEPLOY_SSH_PUBLIC_KEY" >> ~/.ssh/known_hosts
+      - uses: webfactory/ssh-agent@v0.8.0
+        with:
+          ssh-private-key: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@40891eba8c2bcd1309b07ba8b11232f313e86779
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@c4ee3adeed93b1fa6a762f209fb01608c1a22f1e
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@eafaea8d0f5853934deece2ffa67af59d936562b
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+      - name: Build Next.js app and `scp` to server
+        env:
+          SERVER_IP: ${{ secrets.SERVER_IP }}
+        run: |
+          npm install
+          npm build
+
+          echo "Creating remote directory structure..."
+          ssh root@$SERVER_IP "mkdir -p /home/root/aglio/.next /home/root/aglio/dbschema/migrations" > >(sed 's/^/[DIR\/stdout] /') 2> >(sed 's/^/[DIR\/stderr] /' >&2)
+
+          echo "Copying files to the remote server..."
+          scp -r ./.next/* root@$SERVER_IP:/home/root/aglio/.next
+          scp ./docker-compose.yml root@$SERVER_IP:/home/root/aglio/docker-compose.yml
+          scp ./.dockerignore root@$SERVER_IP:/home/root/aglio/.dockerignore
+          scp ./Dockerfile root@$SERVER_IP:/home/root/aglio/Dockerfile
+          scp ./package.json root@$SERVER_IP:/home/root/aglio/package.json
+          scp ./package-lock.json root@$SERVER_IP:/home/root/aglio/package-lock.json
+
+          echo "Running migrations on the remote server..."
+          scp ./dbschema/default.esdl root@$SERVER_IP:/home/root/aglio/dbschema/default.esdl
+          scp -r ./dbschema/migrations root@$SERVER_IP:/home/root/aglio/dbschema/migrations
+          scp ./migrate.sh root@$SERVER_IP:/home/root/aglio/migrate.sh
+          ssh root@$SERVER_IP "cd /home/root/aglio && bash -s -- ./migrate.sh" > >(sed 's/^/[MIGRATE\/stdout] /') 2> >(sed 's/^/[MIGRATE\/stderr] /' >&2)
+
+          echo "Running deploy script on the remote server..."
+          scp ./deploy.sh root@$SERVER_IP:/home/root/aglio/deploy.sh
+          ssh root@$SERVER_IP "cd /home/root/aglio && bash -s -- ./deploy.sh" > >(sed 's/^/[DEPLOY\/stdout] /') 2> >(sed 's/^/[DEPLOY\/stderr] /' >&2)
