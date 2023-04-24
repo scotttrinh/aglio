@@ -49,7 +49,8 @@
         '';
       });
       buildInputs = with pkgs; [
-        nodejs-18_x
+        (nodejs-18_x.override { enableNpm = false; })
+        nodePackages.npm
       ];
       devInputs = with pkgs; [
         edgedb-dev
