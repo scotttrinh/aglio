@@ -1,13 +1,18 @@
+import { redirect } from "next/navigation";
+
+import { getSession } from "@/getSession";
+
 import { sequenceQuery } from "./query";
-
-import { getServerSessionUser } from "@/getServerSessionUser";
-import { client } from "@/edgedb";
-
 import { SequenceList } from "./SequenceList";
 
 export default async function Sequences() {
-  const user = await getServerSessionUser();
-  const sequences = await sequenceQuery.run(client, { userId: user!.id });
+  const session = await getSession();
+
+  if (session.state === "LOGGED_OUT") return redirect("/login");
+
+  const { client } = session;
+
+  const sequences = await sequenceQuery.run(client);
 
   return (
     <>

@@ -1,23 +1,23 @@
-import { client } from "@/edgedb";
 import { redirect } from "next/navigation";
 
 import { sourceQuery, sequenceQuery } from "./query";
-
 import { Player } from "./Player";
-import { getServerSessionUser } from "@/getServerSessionUser";
+
+import { getSession } from "@/getSession";
 
 interface Context {
   params: { id: string };
 }
 
 export default async function SequenceDetailPage(context: Context) {
-  const user = await getServerSessionUser();
-  if (!user) return redirect("/login");
+  const session = await getSession();
+  if (session.state === "LOGGED_OUT") return redirect("/login");
+  const { client } = session;
 
   const { id } = context.params;
   const [sequence, sources] = await Promise.all([
     sequenceQuery.run(client, { id }),
-    sourceQuery.run(client, { userId: user.id }),
+    sourceQuery.run(client),
   ]);
 
   if (sequence === null) {

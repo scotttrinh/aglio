@@ -1,4 +1,6 @@
 module default {
+  global current_user -> uuid;
+
   type Account {
     required property provider -> str;
     required property provider_account_id -> str;
@@ -21,7 +23,6 @@ module default {
     multi link sources -> Source {
       on target delete allow;
     };
-    multi link sequences := .<owner[is Sequence];
   }
 
   type Source {
@@ -51,5 +52,12 @@ module default {
       on source delete delete target if orphan;
     };
     required link owner -> User;
+
+    access policy owner_has_full_access
+      allow all
+      using (global current_user ?= .owner.id);
   }
+
 }
+
+using future nonrecursive_access_policies;

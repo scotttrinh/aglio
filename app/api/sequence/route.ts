@@ -2,8 +2,7 @@ import { z } from "zod";
 import { NextRequest, NextResponse } from "next/server";
 
 import e from "@/dbschema/edgeql-js";
-import { client } from "@/edgedb";
-import { getServerSessionUser } from "@/getServerSessionUser";
+import { getSession } from "@/getSession";
 
 export const PostBody = z.object({
   name: z.string(),
@@ -17,9 +16,11 @@ export const PostBody = z.object({
 export type PostBody = z.infer<typeof PostBody>;
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
-  const user = await getServerSessionUser();
-  if (!user)
+  const session = await getSession();
+  if (session.state === "LOGGED_OUT")
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+
+  const { client } = session;
 
   const json = await request.json();
   const bodyResult = PostBody.safeParse(json);
