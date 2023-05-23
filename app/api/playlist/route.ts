@@ -2,8 +2,7 @@ import { z } from "zod";
 import { NextRequest, NextResponse } from "next/server";
 
 import e from "@/dbschema/edgeql-js";
-import { client } from "@/edgedb";
-import { getServerSessionUser } from "@/getServerSessionUser";
+import { getSession } from "@/getSession";
 
 import { getYouTubePlaylist } from "./youtube";
 
@@ -24,10 +23,12 @@ const PostBody = z.union([YouTubeBody, SpotifyBody]);
 type PostBody = z.infer<typeof PostBody>;
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
-  const user = await getServerSessionUser();
+  const session = await getSession();
 
-  if (!user)
+  if (session.state === "LOGGED_OUT")
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+
+  const { client } = session;
 
   const json = await request.json();
   const bodyResult = PostBody.safeParse(json);
@@ -38,10 +39,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
   const { data: body } = bodyResult;
 
-  if (
-    body.provider !== "youtube" ||
-    body.mediaType !== "playlist"
-  ) {
+  if (body.provider !== "youtube" || body.mediaType !== "playlist") {
     return NextResponse.json({ message: "Not implemented" }, { status: 400 });
   }
 
@@ -51,10 +49,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     providerMeta: provider_meta,
   } = await getYouTubePlaylist(body.url);
 
-  const result = await e.update(e.User, () => ({
-        set: {
-          sources: {
-            "+=": e.insert(e.Source, {
+  const result = await e
+    .update(e.User, () => ({
+      set: {
+        sources: {
+          "+=": e
+            .insert(e.Source, {
               url: body.url,
               media_type: body.mediaType,
               provider: body.provider,
@@ -62,13 +62,14 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
               title,
               thumbnail,
               provider_meta,
-            }).unlessConflict((source) => ({
+            })
+            .unlessConflict((source) => ({
               on: source.url,
               else: source,
             })),
-          },
         },
-      }))
+      },
+    }))
     .run(client);
 
   return NextResponse.json(result, { status: 201 });

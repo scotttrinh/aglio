@@ -21,21 +21,13 @@ export const sequenceQuery = e.params(
 export type Sequence = $infer<typeof sequenceQuery>;
 export type Step = Exclude<Sequence, null>["steps"][number];
 
-export const sourceQuery = e.params(
-  {
-    userId: e.uuid,
-  },
-  (params) =>
-    e.select(e.Source, (source) => ({
-      id: true,
-      url: true,
-      provider: true,
-      media_type: true,
-      title: true,
-      thumbnail: true,
-
-      filter: e.op(params.userId, "in", source["<sources[is User]"].id),
-    }))
-);
+export const sourceQuery = e.select(e.Source, () => ({
+  id: true,
+  url: true,
+  provider: true,
+  media_type: true,
+  title: true,
+  thumbnail: true,
+}));
 
 export type Source = $infer<typeof sourceQuery>[number];

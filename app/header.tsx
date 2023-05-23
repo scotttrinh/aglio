@@ -1,22 +1,22 @@
 import Link from "next/link";
 
-import { getServerSessionUser } from "@/getServerSessionUser";
+import { getSession } from "@/getSession";
 
 import { Breadcrumbs } from "./Breadcrumbs";
 
 export const Header = (async function Header() {
-  const user = await getServerSessionUser();
+  const session = await getSession();
 
   return (
     <header className="px-2 py-4 flex bg-gray-700 border-b border-gray-600">
       <Breadcrumbs />
       <div className="ml-auto">
-        {!user && (
+        {session.state === "LOGGED_OUT" && (
           <Link href="/api/auth/signin" className="underline">
             Sign in
           </Link>
         )}
-        {user && (
+        {session.state === "LOGGED_IN" && (
           <Link href="/api/auth/signout" className="underline">
             Sign out
           </Link>
@@ -24,4 +24,4 @@ export const Header = (async function Header() {
       </div>
     </header>
   );
-} as unknown as () => JSX.Element)
+} as unknown as () => JSX.Element);
