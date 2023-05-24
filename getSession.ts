@@ -3,15 +3,13 @@ import { Client } from "edgedb";
 import { getServerSession } from "next-auth/next";
 
 import { authOptions } from "@/authOptions";
-import { client } from "@/edgedb";
-import e from "@/dbschema/edgeql-js";
+import { client } from "@/client";
+import e, { type $infer } from "@/dbschema/edgeql-js";
 
 const ServerSession = z
   .object({
     user: z.object({
-      id: z.string(),
       email: z.string(),
-      name: z.string().nullable(),
     }),
   })
   .nullable();
@@ -28,7 +26,7 @@ export const userByEmailQuery = e.params({ email: e.str }, ({ email }) =>
 
 interface LoggedInSession {
   state: "LOGGED_IN";
-  user: { email: string; id: string; name: string | null };
+  user: NonNullable<$infer<typeof userByEmailQuery>>;
   client: Client;
 }
 

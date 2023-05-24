@@ -1,5 +1,5 @@
-import { Adapter, AdapterUser } from "next-auth/adapters";
-import { Client } from "edgedb";
+import { Adapter } from "next-auth/adapters";
+import { type Client } from "edgedb";
 
 import e from "./dbschema/edgeql-js";
 
