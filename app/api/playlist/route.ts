@@ -18,9 +18,9 @@ const SpotifyBody = z.object({
   url: z.string().url(),
 });
 
-export const PostBody = z.union([YouTubeBody, SpotifyBody]);
+const PostBody = z.union([YouTubeBody, SpotifyBody]);
 
-export type PostBody = z.infer<typeof PostBody>;
+type PostBody = z.infer<typeof PostBody>;
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const session = await getSession();

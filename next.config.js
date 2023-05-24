@@ -2,8 +2,7 @@
 const nextConfig = {
   experimental: {
     appDir: true,
-    serverComponentsExternalPackages: ["node-fetch"],
   },
-}
+};
 
-module.exports = nextConfig
+module.exports = nextConfig;

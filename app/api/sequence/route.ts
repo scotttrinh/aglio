@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import e from "@/dbschema/edgeql-js";
 import { getSession } from "@/getSession";
 
-export const PostBody = z.object({
+const PostBody = z.object({
   name: z.string(),
   steps: z.array(
     z.object({
@@ -13,7 +13,7 @@ export const PostBody = z.object({
     })
   ),
 });
-export type PostBody = z.infer<typeof PostBody>;
+type PostBody = z.infer<typeof PostBody>;
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const session = await getSession();
@@ -43,7 +43,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     (params) => {
       return e.insert(e.Sequence, {
         name: params.sequence.name,
-        owner: e.select(e.User, () => ({ filter_single: { id: user.id } })),
+        owner: e.select(e.User, () => ({
+          filter_single: { id: session.user.id },
+        })),
         steps: e.for(e.array_unpack(params.sequence.steps), (step) => {
           return e.insert(e.Step, {
             duration: step.duration,
