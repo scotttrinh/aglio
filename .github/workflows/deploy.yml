@@ -6,10 +6,7 @@ env:
   GOOGLE_SECRET: "dummy"
   YOUTUBE_API_KEY: "dummy"
 
-on:
-  push:
-    branches:
-      - "*"
+on: push
 
 jobs:
   deploy:
