@@ -15,4 +15,5 @@ export const authOptions: AuthOptions = {
     }),
   ],
   adapter: EdgeDBAdapter(client),
+  debug: true,
 };
