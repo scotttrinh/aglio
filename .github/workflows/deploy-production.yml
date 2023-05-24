@@ -11,9 +11,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+
       - uses: actions/setup-node@v3
         with:
           node-version: "20.2.0"
+
+      - uses: edgedb/setup-edgedb@8bc9e10005674ec772652b86e1fdd476e6462284
+        with:
+          cli-version: nightly
+      - name: Migrate
+        run: edgedb migration apply
+      - name: Generate query builder
+        run: npx @edgedb/generate edgeql-js
+      - name: Generate interfaces
+        run: npx @edgedb/generate interfaces
+
       - name: Install Vercel CLI
         run: npm install --global vercel@latest
       - name: Pull Vercel Environment Information
