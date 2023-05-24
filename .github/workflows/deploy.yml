@@ -35,7 +35,6 @@ jobs:
           npx @edgedb/generate interfaces
 
       - name: Deploy to Vercel
-        env:
         run: |
           npx vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
           npx vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }}
