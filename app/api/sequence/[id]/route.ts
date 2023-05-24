@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import e from "@/dbschema/edgeql-js";
-import { client } from "@/edgedb";
+import { client } from "@/client";
 
 interface Context {
   params: {

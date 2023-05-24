@@ -3,7 +3,7 @@ import GoogleProvider from "next-auth/providers/google";
 
 import EdgeDBAdapter from "@/authAdapter";
 import { getServerConfig } from "@/config";
-import { client } from "@/edgedb";
+import { client } from "@/client";
 
 const { GOOGLE_ID, GOOGLE_SECRET } = getServerConfig();
 
@@ -14,5 +14,5 @@ export const authOptions: AuthOptions = {
       clientSecret: GOOGLE_SECRET,
     }),
   ],
-  adapter: EdgeDBAdapter(client)
-}
+  adapter: EdgeDBAdapter(client),
+};

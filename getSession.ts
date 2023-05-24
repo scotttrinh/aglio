@@ -3,7 +3,7 @@ import { Client } from "edgedb";
 import { getServerSession } from "next-auth/next";
 
 import { authOptions } from "@/authOptions";
-import { client } from "@/edgedb";
+import { client } from "@/client";
 import e from "@/dbschema/edgeql-js";
 
 const ServerSession = z
