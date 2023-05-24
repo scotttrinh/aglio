@@ -16,15 +16,16 @@ jobs:
         with:
           node-version: "20.2.0"
 
-      - uses: edgedb/setup-edgedb@8bc9e10005674ec772652b86e1fdd476e6462284
+      - name: Setup EdgeDB CLI and Server
+        uses: edgedb/setup-edgedb@8bc9e10005674ec772652b86e1fdd476e6462284
         with:
           cli-version: nightly
-      - name: Migrate
+      - name: Apply EdgeDB migrations
         run: edgedb migration apply
-      - name: Generate query builder
-        run: npx @edgedb/generate edgeql-js
-      - name: Generate interfaces
-        run: npx @edgedb/generate interfaces
+      - name: Run EdgeDB generators
+        run: |
+          npx @edgedb/generate edgeql-js
+          npx @edgedb/generate interfaces
 
       - name: Install Vercel CLI
         run: npm install --global vercel@latest
