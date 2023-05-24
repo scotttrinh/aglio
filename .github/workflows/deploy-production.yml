@@ -2,6 +2,10 @@ name: Vercel Production Deployment
 env:
   VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
   VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+  GOOGLE_ID: ${{ vars.GOOGLE_ID }}
+  GOOGLE_SECRET: ${{ vars.GOOGLE_SECRET }}
+  YOUTUBE_API_ID: ${{ vars.YOUTUBE_API_ID }}
+
 on:
   push:
     branches:
@@ -22,15 +26,17 @@ jobs:
           cli-version: nightly
       - name: Apply EdgeDB migrations
         run: edgedb migration apply
-      - name: Run EdgeDB generators
-        run: |
-          npx @edgedb/generate edgeql-js
-          npx @edgedb/generate interfaces
 
       - name: Build application
         run: |
           npm ci
           npm run build
+
+      - name: Run EdgeDB generators
+        run: |
+          npx @edgedb/generate edgeql-js
+          npx @edgedb/generate interfaces
+
       - name: Pull Vercel Environment Information
         run: npx vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
       - name: Build Project Artifacts
