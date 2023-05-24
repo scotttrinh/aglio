@@ -2,9 +2,9 @@ name: Vercel Preview Deployment
 env:
   VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
   VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-  GOOGLE_ID: ${{ vars.GOOGLE_ID }}
-  GOOGLE_SECRET: ${{ vars.GOOGLE_SECRET }}
-  YOUTUBE_API_ID: ${{ vars.YOUTUBE_API_ID }}
+  GOOGLE_ID: "dummy"
+  GOOGLE_SECRET: "dummy"
+  YOUTUBE_API_KEY: "dummy"
 
 on:
   push:
