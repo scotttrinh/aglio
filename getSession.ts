@@ -26,7 +26,7 @@ export const userByEmailQuery = e.params({ email: e.str }, ({ email }) =>
 
 interface LoggedInSession {
   state: "LOGGED_IN";
-  user: $infer<typeof userByEmailQuery>;
+  user: NonNullable<$infer<typeof userByEmailQuery>>;
   client: Client;
 }
 
