@@ -41,7 +41,7 @@ jobs:
           npx vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Deploy to production
-        if: github.ref == 'ref/head/main'
+        if: github.ref == 'refs/heads/main'
         run: |
           npx vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
           npx vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
