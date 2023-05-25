@@ -1,39 +1,39 @@
 module default {
-  global current_user -> uuid;
+  global current_user: uuid;
 
   type Account {
-    required property provider -> str;
-    required property provider_account_id -> str;
+    required provider: str;
+    required provider_account_id: str;
   }
 
   type Session {
-    required property expires -> datetime;
-    required property token -> str;
-    required link user -> User;
+    required expires: datetime;
+    required token: str;
+    required user: User;
   }
 
   type User {
-    required property name -> str;
-    required property email -> str {
+    required name: str;
+    required email: str {
       constraint exclusive;
     };
-    property email_verified -> datetime;
+    email_verified: datetime;
 
-    multi link accounts -> Account;
-    multi link sources -> Source {
+    multi accounts: Account;
+    multi sources: Source {
       on target delete allow;
     };
   }
 
   type Source {
-    required property provider -> str;
-    required property media_type -> str;
-    required property url -> str {
+    required provider: str;
+    required media_type: str;
+    required url: str {
       constraint exclusive;
     };
-    property title -> str;
-    property thumbnail -> str;
-    property provider_meta -> json;
+    title: str;
+    thumbnail: str;
+    provider_meta: json;
   }
 
   scalar type Behavior extending enum<
@@ -42,16 +42,16 @@ module default {
   >;
 
   type Step {
-    required property duration -> int64;
-    required property behaviors -> array<Behavior>;
+    required duration: int64;
+    required behaviors: array<Behavior>;
   }
 
   type Sequence {
-    required property name -> str;
-    multi link steps -> Step {
+    required name: str;
+    multi steps: Step {
       on source delete delete target if orphan;
     };
-    required link owner -> User;
+    required owner: User;
 
     access policy owner_has_full_access
       allow all
@@ -59,5 +59,3 @@ module default {
   }
 
 }
-
-using future nonrecursive_access_policies;
