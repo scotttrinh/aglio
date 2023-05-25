@@ -29,6 +29,10 @@ jobs:
         run: |
           npm ci
 
+      - name: Checks
+        run: |
+          npm run lint
+
       - name: Run EdgeDB generators
         run: |
           npx @edgedb/generate edgeql-js
