@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { FormEvent, useState, useTransition } from "react";
+import { FormEvent, useState } from "react";
 import { IconPlus } from "@tabler/icons-react";
 
 import {
@@ -17,6 +17,7 @@ import * as Disclosure from "@/components/Disclosure";
 import { Cell } from "@/components/GridTable";
 import * as Select from "@/components/Select";
 import { createSequence } from "../actions";
+import { useSact } from "../useSact";
 
 type UnsavedStep = Omit<Step, "id">;
 
@@ -87,9 +88,6 @@ export function AddSequence() {
     { duration: 25, behaviors: [] },
   ]);
   const router = useRouter();
-  const [isFetching, setIsFetching] = useState(false);
-  const [isPending, startTransition] = useTransition();
-  const isBusy = isFetching || isPending;
 
   const handleAddStep = () => {
     setSteps((existingSteps) => {
@@ -121,17 +119,9 @@ export function AddSequence() {
     });
   };
 
-  const handleSubmit = async () => {
-    setIsFetching(true);
-    await createSequence({
-      name,
-      steps: steps.filter((step) => Boolean(step.duration)),
-    });
-    setIsFetching(false);
-    startTransition(() => {
-      router.refresh();
-    });
-  };
+  const { act: handleSubmit, data } = useSact(createSequence, () => {
+    router.refresh();
+  });
 
   const totals = steps.reduce(
     (acc, step) => {
@@ -155,7 +145,12 @@ export function AddSequence() {
     >
       <form
         className="grid grid-cols-12 col-span-full items-center"
-        action={handleSubmit}
+        action={() =>
+          handleSubmit({
+            name,
+            steps: steps.filter((step) => Boolean(step.duration)),
+          })
+        }
       >
         <Disclosure.Trigger asChild>
           <Cell className="col-span-1 flex justify-end py-1">
@@ -190,7 +185,7 @@ export function AddSequence() {
               {secondsToPaddedHMS(totals.break)}
             </Cell>
             <Cell className="col-start-11 col-span-2">
-              <Button type="submit" disabled={isBusy}>
+              <Button type="submit" disabled={!data.isSuccess()}>
                 Save
               </Button>
             </Cell>

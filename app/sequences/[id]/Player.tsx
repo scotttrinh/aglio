@@ -1,17 +1,18 @@
 "use client";
 
-import { useCallback, useState, FormEvent, useTransition } from "react";
+import { useCallback, useState, FormEvent } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 
 import { Input } from "@/components/Input";
 import { Button } from "@/components/Button";
+import { createSource } from "@/app/actions";
+import { useSact } from "@/app/useSact";
 
 import { Timer, TimerState } from "./Timer";
 import { SourceCard } from "./SourceCard";
 import { Source, Step } from "./query";
-import { createPortal } from "react-dom";
 import { PlayerProvider } from "./PlayerContext";
-import { createSource } from "@/app/actions";
 
 function AddSource({
   onCreate,
@@ -73,19 +74,12 @@ export function Player({
   steps: Step[];
   sources: Source[];
 }) {
-  const [isFetching, setIsFetching] = useState<boolean>(false);
-  const [isPending, startTransition] = useTransition();
-
   const [audioElem, setAudioElem] = useState<HTMLDivElement | null>(null);
 
   const [videoElem, setVideoElem] = useState<HTMLDivElement | null>(null);
 
   const [audioPortalTargetElem, setAudioPortalTargetElem] =
     useState<HTMLDivElement | null>(null);
-
-  const [createSourceError, setCreateSourceError] = useState<string | null>(
-    null
-  );
 
   const [video, setVideo] = useState<Source | null>(null);
 
@@ -96,6 +90,10 @@ export function Player({
   const [timerState, setTimerState] = useState<TimerState>("paused");
 
   const router = useRouter();
+
+  const { act: handleCreateSource, data } = useSact(createSource, () => {
+    router.refresh();
+  });
 
   const handleTimerStateChange = useCallback(
     (timerState: TimerState) => {
@@ -110,30 +108,6 @@ export function Player({
     [steps.length]
   );
 
-  const handleSourceCreate = async (url: string) => {
-    // Use fetch to call API with the new playlist URL and check for any HTTP errors
-    // If there are no errors, use the router to refresh the page
-
-    setIsFetching(true);
-    try {
-      await createSource({
-        url,
-        provider: "youtube",
-        mediaType: "playlist",
-      });
-
-      startTransition(() => {
-        router.refresh();
-      });
-    } catch (error) {
-      if (error instanceof Error) {
-        setCreateSourceError(error.message);
-      }
-    } finally {
-      setIsFetching(false);
-    }
-  };
-
   const step = steps[stepIndex];
   const duration = step.duration;
 
@@ -142,13 +116,23 @@ export function Player({
       <div className="flex gap-4 w-full px-2">
         <div className="flex gap-1 flex-1">
           <AddSource
-            onCreate={handleSourceCreate}
-            isDisabled={isFetching || isPending}
+            onCreate={(url) =>
+              handleCreateSource({
+                mediaType: "playlist",
+                provider: "youtube",
+                url,
+              })
+            }
+            isDisabled={!data.isSuccess()}
           />
         </div>
-        {createSourceError && (
-          <div className="bg-red-500 text-white p-2">{createSourceError}</div>
-        )}
+        {data.wedgeCaseOf({
+          failure: (error) => (
+            <div className="bg-red-500 text-white p-2">{error.message}</div>
+          ),
+          none: null,
+          some: () => null,
+        })}
       </div>
       <div className="relative h-full">
         <div className="w-full h-full">
