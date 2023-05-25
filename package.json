@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@cala/remote-data": "^0.3.1",
     "@radix-ui/react-collapsible": "^1.0.2",
     "@radix-ui/react-select": "^1.2.1",
     "@radix-ui/react-slider": "^1.1.1",
