@@ -4,6 +4,7 @@ import { useTransition, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/Button";
+import { deleteSequence } from "../actions";
 
 export function Actions({ id }: { id: string }) {
   const [isFetching, setIsFetching] = useState(false);
@@ -13,10 +14,9 @@ export function Actions({ id }: { id: string }) {
   const router = useRouter();
 
   const handleDelete = async () => {
+    setIsFetching(true);
     try {
-      await fetch(`/api/sequence/${id}`, {
-        method: "DELETE",
-      });
+      await deleteSequence(id);
     } catch (error) {
       alert(error);
     } finally {
@@ -30,7 +30,11 @@ export function Actions({ id }: { id: string }) {
 
   return (
     <div>
-      <Button type="button" onClick={handleDelete}>
+      <Button
+        disabled={isFetching || isPending}
+        type="button"
+        onClick={handleDelete}
+      >
         Delete
       </Button>
     </div>
