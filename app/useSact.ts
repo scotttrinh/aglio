@@ -1,7 +1,9 @@
-import { useRef, useState, useTransition } from "react";
+import { useMemo, useRef, useState, useTransition } from "react";
 import * as RD from "@cala/remote-data";
+import { useRouter } from "next/navigation";
 
 interface UseSactReturn<InputValue, T> {
+  isBusy: boolean;
   data: RD.RemoteData<Error, T>;
   act: (input: InputValue) => Promise<void>;
 }
@@ -25,23 +27,39 @@ export function useSact<InputType, T>(
 
   const [remote, setRemote] = useState<RD.RemoteData<Error, T>>(RD.initial);
 
-  const act = useRef(async (input: InputType) => {
-    setRemote(maybeRefreshRemote(remote));
+  const act = useMemo(
+    () => async (input: InputType) => {
+      console.log("act", input);
+      setRemote((existing) => maybeRefreshRemote(existing));
 
-    try {
-      const result = await actionRef.current(input);
-      if (transitionWith) {
+      try {
+        const result = await actionRef.current(input);
+        if (transitionWith) {
+          setRemote(RD.success(result));
+          startTransition(transitionWith);
+        }
         setRemote(RD.success(result));
-        startTransition(transitionWith);
+      } catch (err) {
+        setRemote(RD.failure(err as Error));
       }
-      setRemote(RD.success(result));
-    } catch (err) {
-      setRemote(RD.failure(err as Error));
-    }
-  });
+    },
+    [transitionWith]
+  );
+
+  const data = isTransitioning ? maybeRefreshRemote(remote) : remote;
 
   return {
-    act: act.current,
-    data: isTransitioning ? maybeRefreshRemote(remote) : remote,
+    act,
+    data,
+    isBusy: data.isPending() || data.isRefresh(),
   };
+}
+
+export function useSactRefresh<InputType, T>(
+  action: (input: InputType) => Promise<T>
+): UseSactReturn<InputType, T> {
+  const router = useRouter();
+  return useSact(action, () => {
+    router.refresh();
+  });
 }

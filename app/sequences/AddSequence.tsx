@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 import { IconPlus } from "@tabler/icons-react";
 
@@ -17,7 +16,7 @@ import * as Disclosure from "@/components/Disclosure";
 import { Cell } from "@/components/GridTable";
 import * as Select from "@/components/Select";
 import { createSequence } from "../actions";
-import { useSact } from "../useSact";
+import { useSactRefresh } from "../useSact";
 
 type UnsavedStep = Omit<Step, "id">;
 
@@ -87,7 +86,6 @@ export function AddSequence() {
   const [steps, setSteps] = useState<UnsavedStep[]>([
     { duration: 25, behaviors: [] },
   ]);
-  const router = useRouter();
 
   const handleAddStep = () => {
     setSteps((existingSteps) => {
@@ -119,9 +117,7 @@ export function AddSequence() {
     });
   };
 
-  const { act: handleSubmit, data } = useSact(createSequence, () => {
-    router.refresh();
-  });
+  const { act: handleSubmit, isBusy } = useSactRefresh(createSequence);
 
   const totals = steps.reduce(
     (acc, step) => {
@@ -145,12 +141,13 @@ export function AddSequence() {
     >
       <form
         className="grid grid-cols-12 col-span-full items-center"
-        action={() =>
-          handleSubmit({
+        action={() => {
+          console.log("action");
+          return handleSubmit({
             name,
             steps: steps.filter((step) => Boolean(step.duration)),
-          })
-        }
+          });
+        }}
       >
         <Disclosure.Trigger asChild>
           <Cell className="col-span-1 flex justify-end py-1">
@@ -185,7 +182,7 @@ export function AddSequence() {
               {secondsToPaddedHMS(totals.break)}
             </Cell>
             <Cell className="col-start-11 col-span-2">
-              <Button type="submit" disabled={!data.isSuccess()}>
+              <Button type="submit" disabled={isBusy}>
                 Save
               </Button>
             </Cell>

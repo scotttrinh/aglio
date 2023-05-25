@@ -2,12 +2,11 @@
 
 import { useCallback, useState, FormEvent } from "react";
 import { createPortal } from "react-dom";
-import { useRouter } from "next/navigation";
 
 import { Input } from "@/components/Input";
 import { Button } from "@/components/Button";
 import { createSource } from "@/app/actions";
-import { useSact } from "@/app/useSact";
+import { useSactRefresh } from "@/app/useSact";
 
 import { Timer, TimerState } from "./Timer";
 import { SourceCard } from "./SourceCard";
@@ -89,11 +88,11 @@ export function Player({
 
   const [timerState, setTimerState] = useState<TimerState>("paused");
 
-  const router = useRouter();
-
-  const { act: handleCreateSource, data } = useSact(createSource, () => {
-    router.refresh();
-  });
+  const {
+    act: handleCreateSource,
+    data,
+    isBusy,
+  } = useSactRefresh(createSource);
 
   const handleTimerStateChange = useCallback(
     (timerState: TimerState) => {
@@ -123,7 +122,7 @@ export function Player({
                 url,
               })
             }
-            isDisabled={!data.isSuccess()}
+            isDisabled={isBusy}
           />
         </div>
         {data.wedgeCaseOf({
