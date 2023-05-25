@@ -39,19 +39,18 @@ async function requireAuth() {
     .exhaustive();
 }
 
-export async function createSequence(data: unknown) {
-  const { name, steps } = parseInput(
+const CreateSequence = z.object({
+  name: z.string(),
+  steps: z.array(
     z.object({
-      name: z.string(),
-      steps: z.array(
-        z.object({
-          duration: z.number().int().positive(),
-          behaviors: z.array(z.enum(["PAUSES_VIDEO", "PAUSES_AUDIO"])),
-        })
-      ),
-    }),
-    data
-  );
+      duration: z.number().int().positive(),
+      behaviors: z.array(z.enum(["PAUSES_VIDEO", "PAUSES_AUDIO"])),
+    })
+  ),
+});
+
+export async function createSequence(data: z.infer<typeof CreateSequence>) {
+  const { name, steps } = parseInput(CreateSequence, data);
   const { client, user } = await requireAuth();
 
   const insert = e.params(
@@ -98,15 +97,14 @@ export async function deleteSequence(id: string) {
   }
 }
 
-export async function createSource(data: unknown) {
-  const source = parseInput(
-    z.object({
-      provider: z.literal("youtube"),
-      mediaType: z.literal("playlist"),
-      url: z.string().url(),
-    }),
-    data
-  );
+const CreateSource = z.object({
+  provider: z.literal("youtube"),
+  mediaType: z.literal("playlist"),
+  url: z.string().url(),
+});
+
+export async function createSource(data: z.infer<typeof CreateSource>) {
+  const source = parseInput(CreateSource, data);
   const { client } = await requireAuth();
 
   const {
