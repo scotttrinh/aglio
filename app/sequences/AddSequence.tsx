@@ -16,6 +16,7 @@ import { Input } from "@/components/Input";
 import * as Disclosure from "@/components/Disclosure";
 import { Cell } from "@/components/GridTable";
 import * as Select from "@/components/Select";
+import { createSequence } from "../actions";
 
 type UnsavedStep = Omit<Step, "id">;
 
@@ -120,19 +121,11 @@ export function AddSequence() {
     });
   };
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-
+  const handleSubmit = async () => {
     setIsFetching(true);
-    await fetch("/api/sequence/", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        name,
-        steps: steps.filter((step) => Boolean(step.duration)),
-      }),
+    await createSequence({
+      name,
+      steps: steps.filter((step) => Boolean(step.duration)),
     });
     setIsFetching(false);
     startTransition(() => {
@@ -162,7 +155,7 @@ export function AddSequence() {
     >
       <form
         className="grid grid-cols-12 col-span-full items-center"
-        onSubmit={handleSubmit}
+        action={handleSubmit}
       >
         <Disclosure.Trigger asChild>
           <Cell className="col-span-1 flex justify-end py-1">
