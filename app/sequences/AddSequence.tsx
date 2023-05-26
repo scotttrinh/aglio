@@ -60,9 +60,11 @@ function EditStep({
             <Select.Item value="break">Break</Select.Item>
           </Select.Content>
         </Select.Root>
+        <input name="step-type" type="hidden" value={stepType} readOnly />
       </Cell>
       <Cell className="col-span-2">
         <Input
+          name="step-duration"
           aria-label="duration"
           type="number"
           min="1"
@@ -151,8 +153,8 @@ export function AddSequence({
     >
       <form
         className="grid grid-cols-12 col-span-full items-center"
-        action={() => {
-          console.log("action");
+        action={(formData) => {
+          console.log(Array.from(formData.entries()));
           return handleSubmit({
             name,
             steps: steps.filter((step) => Boolean(step.duration)),
@@ -174,6 +176,7 @@ export function AddSequence({
           <>
             <Cell className="col-span-3">
               <Input
+                name="name"
                 placeholder="New sequence name"
                 aria-label="name"
                 type="text"
