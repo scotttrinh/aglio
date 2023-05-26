@@ -28,14 +28,7 @@ async function requireAuth() {
     .with({ state: "LOGGED_OUT" }, () => {
       throw new Error("Unauthorized");
     })
-    .with(
-      {
-        state: "LOGGED_IN",
-        client: P.select("client"),
-        user: P.select("user"),
-      },
-      (a) => a
-    )
+    .with({ state: "LOGGED_IN" }, (a) => a)
     .exhaustive();
 }
 
