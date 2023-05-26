@@ -1,5 +1,3 @@
-"use client";
-
 import { FormEvent, useState } from "react";
 import { IconPlus } from "@tabler/icons-react";
 
@@ -9,7 +7,7 @@ import {
   secondsToPaddedHMS,
   stepTypeToBehaviors,
 } from "@/utils";
-import { Step, Behavior } from "@/dbschema/interfaces";
+import { Step, Behavior, Sequence, helper } from "@/dbschema/interfaces";
 import { Button } from "@/components/Button";
 import { Input } from "@/components/Input";
 import * as Disclosure from "@/components/Disclosure";
@@ -19,6 +17,9 @@ import { createSequence } from "../actions";
 import { useSactRefresh } from "../useSact";
 
 type UnsavedStep = Omit<Step, "id">;
+type SimpleSequence = Omit<helper.Props<Sequence>, "id"> & {
+  steps: UnsavedStep[];
+};
 
 function EditStep({
   step,
@@ -80,7 +81,11 @@ function EditStep({
   );
 }
 
-export function AddSequence() {
+export function AddSequence({
+  onAddSequence,
+}: {
+  onAddSequence: (seq: SimpleSequence) => void;
+}) {
   const [isShowingForm, setIsShowingForm] = useState(false);
   const [name, setName] = useState("");
   const [steps, setSteps] = useState<UnsavedStep[]>([
@@ -117,7 +122,12 @@ export function AddSequence() {
     });
   };
 
-  const { act: handleSubmit, isBusy } = useSactRefresh(createSequence);
+  const { act: handleSubmit, isBusy } = useSactRefresh(
+    (seq: SimpleSequence) => {
+      onAddSequence(seq);
+      return createSequence(seq);
+    }
+  );
 
   const totals = steps.reduce(
     (acc, step) => {
