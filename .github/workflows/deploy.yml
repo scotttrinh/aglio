@@ -32,6 +32,7 @@ jobs:
       - name: Checks
         run: |
           npm run lint
+          npx tsc --noEmit
 
       - name: Run EdgeDB generators
         run: |
