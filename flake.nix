@@ -14,28 +14,25 @@
     flake-utils.lib.eachDefaultSystem (system: let
       pkgs = import nixpkgs {inherit system;};
       edgedb-dev = pkgs.edgedb.overrideAttrs (oldAttrs: rec {
+        version = "4.0.0-alpha.1+ddfbe70";
         src = pkgs.fetchFromGitHub {
           owner = "edgedb";
           repo = "edgedb-cli";
-          rev = "f4fc73eac35426bc119afa0a1b42c31235c08f53";
-          sha256 = "sha256-YInv9Yh9SYHJ5jvb90lcB58xIymAcUAhddnmkXLA7P0=";
+          rev = "243f510575f7d3fce8d1964c964dd5fdbf510299";
+          sha256 = "sha256-1G7Ci7iI8IbgWRUDPBhW9hVDR6l/VbrLJEkKzyQpIkw=";
           fetchSubmodules = true;
         };
         cargoDeps = pkgs.rustPlatform.importCargoLock {
           lockFile = src + "/Cargo.lock";
           outputHashes = {
-            "edgedb-derive-0.5.0" = "sha256-4sk8nAPgiHaC7dXgng4QPMx0oc0voqMj4a1xNiBrppw=";
-            "edgeql-parser-0.1.0" = "sha256-Y3gXxPuR7qnTL4fu2nZIa3e20YV1fLvm2jHAng+Ke2Q=";
+            "edgedb-derive-0.5.1" = "sha256-9NhfmtuZcDG+ouDeUKM8HpboJYU8rT8Own5M13PrDU8=";
+            "edgeql-parser-0.1.0" = "sha256-c5xBuW47xXgy8VLR/P7DvVhLBd0rvI6P9w82IPPsTwo=";
             "rexpect-0.5.0" = "sha256-vstAL/fJWWx7WbmRxNItKpzvgGF3SvJDs5isq9ym/OA=";
             "rustyline-8.0.0" = "sha256-CrICwQbHPzS4QdVIEHxt2euX+g+0pFYe84NfMp1daEc=";
             "serde_str-1.0.0" = "sha256-CMBh5lxdQb2085y0jc/DrV6B8iiXvVO2aoZH/lFFjak=";
             "indexmap-2.0.0-pre" = "sha256-QMOmoUHE1F/sp+NeDpgRGqqacWLHWG02YgZc5vAdXZY=";
           };
         };
-        # Patch the Cargo.toml to set the build flag to false
-        preBuild = ''
-          sed -i '/^\[package\]/a build = false' Cargo.toml
-        '';
       });
       buildInputs = with pkgs; [
         (nodejs_20.override {enableNpm = false;})
