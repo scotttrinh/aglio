@@ -1,7 +1,6 @@
 import { z } from "zod";
 import { Client } from "edgedb";
 import { getServerSession } from "next-auth/next";
-import { headers, cookies } from "next/headers";
 
 import { authOptions } from "@/authOptions";
 import { client } from "@/client";
@@ -40,22 +39,7 @@ type Session = LoggedInSession | LoggedOutSession;
 const LOGGED_OUT_SESSION: LoggedOutSession = { state: "LOGGED_OUT" };
 
 export async function getSession(): Promise<Session> {
-  // HACK: See issue here: https://github.com/nextauthjs/next-auth/issues/7486#issuecomment-1543747325
-  const req = {
-    headers: Object.fromEntries(headers()),
-    cookies: Object.fromEntries(
-      cookies()
-        .getAll()
-        .map((c) => [c.name, c.value])
-    ),
-  };
-  const res = { getHeader() {}, setCookie() {}, setHeader() {} };
-  const session = await getServerSession(
-    req as any,
-    res as any,
-    authOptions
-  ).then(ServerSession.parse);
-  // HACK: end
+  const session = await getServerSession(authOptions).then(ServerSession.parse);
 
   if (!session) return LOGGED_OUT_SESSION;
 
