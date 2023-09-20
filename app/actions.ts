@@ -1,7 +1,7 @@
 "use server";
 
 import { z } from "zod";
-import { match, P } from "ts-pattern";
+import { match } from "ts-pattern";
 
 import e from "@/dbschema/edgeql-js";
 import { getSession } from "@/getSession";
@@ -58,9 +58,11 @@ export async function createSequence(data: z.infer<typeof CreateSequence>) {
     (params) => {
       return e.insert(e.Sequence, {
         name: params.sequence.name,
-        owner: e.select(e.User, () => ({
-          filter_single: { id: user.id },
-        })),
+        owner: e.assert_exists(
+          e.select(e.User, () => ({
+            filter_single: { id: user.id },
+          }))
+        ),
         steps: e.for(e.array_unpack(params.sequence.steps), (step) => {
           return e.insert(e.Step, {
             duration: step.duration,

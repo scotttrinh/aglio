@@ -1,4 +1,5 @@
 import { Behavior } from "@/dbschema/interfaces";
+import { MightExist } from "@/app/typeUtils";
 
 export function secondsToPaddedHMS(seconds: number) {
   return `${Math.floor(seconds / 3600)
@@ -15,6 +16,6 @@ export const stepTypeToBehaviors: Record<"work" | "break", Behavior[]> = {
 
 export type StepType = keyof typeof stepTypeToBehaviors;
 
-export function isBreak(step: { behaviors: Behavior[] }) {
+export function isBreak(step: { behaviors: MightExist<Behavior>[] }) {
   return step.behaviors.includes("PAUSES_VIDEO");
 }

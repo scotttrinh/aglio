@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import clsx from "clsx";
 
 import { getSession } from "@/getSession";
-import { Row, Cell, HeaderCell } from "@/components/GridTable";
+import { Row, HeaderCell } from "@/components/GridTable";
 
 import { sequenceQuery } from "./query";
 import { SequenceList } from "./SequenceList";
