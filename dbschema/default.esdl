@@ -1,3 +1,4 @@
+using extension pgcrypto;
 using extension auth;
 
 module default {
