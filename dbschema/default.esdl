@@ -2,18 +2,12 @@ using extension pgcrypto;
 using extension auth;
 
 module default {
-  global current_user: uuid;
-
-  type Account {
-    required provider: str;
-    required provider_account_id: str;
-  }
-
-  type Session {
-    required expires: datetime;
-    required token: str;
-    required user: User;
-  }
+  global current_user := (
+    assert_single((
+      select User { id, name, email }
+      filter global ext::auth::ClientTokenIdentity in .identities
+    ))
+  );
 
   type User {
     required name: str;
@@ -22,7 +16,9 @@ module default {
     };
     email_verified: datetime;
 
-    multi accounts: Account;
+    multi identities: ext::auth::Identity {
+      constraint exclusive;
+    };
     multi sources: Source {
       on target delete allow;
     };
@@ -58,7 +54,7 @@ module default {
 
     access policy owner_has_full_access
       allow all
-      using (global current_user ?= .owner.id);
+      using (global current_user.id ?= .owner.id);
   }
 
 }
