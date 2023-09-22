@@ -1,58 +1,44 @@
-import { z } from "zod";
 import { Client } from "edgedb";
-import { getServerSession } from "next-auth/next";
+import { cookies } from "next/headers";
 
-import { authOptions } from "@/authOptions";
 import { client } from "@/client";
-import e, { type $infer } from "@/dbschema/edgeql-js";
 
-const ServerSession = z
-  .object({
-    user: z.object({
-      email: z.string(),
-    }),
-  })
-  .nullable();
+export type User = {
+  id: string;
+  name: string;
+  email: string;
+};
 
-export const userByEmailQuery = e.params({ email: e.str }, ({ email }) =>
-  e.select(e.User, (user) => ({
-    id: true,
-    email: true,
-    name: true,
-
-    filter_single: e.op(user.email, "=", email),
-  }))
-);
-
-interface LoggedInSession {
+type LoggedInSession = {
   state: "LOGGED_IN";
-  user: NonNullable<$infer<typeof userByEmailQuery>>;
+  user: User;
   client: Client;
-}
+};
 
-interface LoggedOutSession {
+type LoggedOutSession = {
   state: "LOGGED_OUT";
-}
+};
 
-type Session = LoggedInSession | LoggedOutSession;
+export type Session = LoggedInSession | LoggedOutSession;
 
 const LOGGED_OUT_SESSION: LoggedOutSession = { state: "LOGGED_OUT" };
 
 export async function getSession(): Promise<Session> {
-  const session = await getServerSession(authOptions).then(ServerSession.parse);
+  const edgedbAuthSession = cookies().get("edgedb-session");
 
-  if (!session) return LOGGED_OUT_SESSION;
+  if (!edgedbAuthSession) return LOGGED_OUT_SESSION;
 
-  const user = await userByEmailQuery.run(client, {
-    email: session.user.email,
+  const clientWithIdentityGlobal = client.withGlobals({
+    "ext::auth::client_token": edgedbAuthSession.value,
   });
-  if (!user) return LOGGED_OUT_SESSION;
 
-  const clientWithUserGlobal = client.withGlobals({ current_user: user.id });
+  const user = await client.queryRequiredSingle<User>(
+    "select global current_user;"
+  );
 
   return {
     state: "LOGGED_IN",
     user,
-    client: clientWithUserGlobal,
+    client: clientWithIdentityGlobal,
   };
 }
