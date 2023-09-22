@@ -5,6 +5,7 @@ import { match } from "ts-pattern";
 
 import e from "@/dbschema/edgeql-js";
 import { getSession } from "@/getSession";
+import { getServerConfig } from "@/config";
 
 import { getYouTubePlaylist } from "./youtube";
 
@@ -76,6 +77,37 @@ export async function createSequence(data: z.infer<typeof CreateSequence>) {
   return await insert.run(client, {
     sequence: { name, steps },
   });
+}
+
+const SignInWithPassword = z.object({
+  provider: z.string(),
+  email: z.string(),
+  handle: z.string(),
+  password: z.string(),
+});
+
+const AUTHENTICATE_URL = new URL(
+  "authenticate",
+  getServerConfig().EDGEDB_AUTH_BASE_URL
+);
+
+export async function signInWithPassword(
+  data: z.infer<typeof SignInWithPassword>
+) {
+  const credentials = parseInput(SignInWithPassword, data);
+  const response = await fetch(AUTHENTICATE_URL.toString(), {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(credentials),
+  });
+
+  if (!response.ok) {
+    throw new Error("Could not authenticate with the provided credentials");
+  }
+
+  return response.json();
 }
 
 export async function deleteSequence(id: string) {

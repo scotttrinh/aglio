@@ -4,7 +4,7 @@ import { getSession } from "@/getSession";
 
 import { Breadcrumbs } from "./Breadcrumbs";
 
-export const Header = (async function Header() {
+export async function Header() {
   const session = await getSession();
 
   return (
@@ -12,16 +12,16 @@ export const Header = (async function Header() {
       <Breadcrumbs />
       <div className="ml-auto">
         {session.state === "LOGGED_OUT" && (
-          <Link href="/api/auth/signin" className="underline">
+          <Link href="/signin" className="underline">
             Sign in
           </Link>
         )}
         {session.state === "LOGGED_IN" && (
-          <Link href="/api/auth/signout" className="underline">
+          <Link href="/signout" className="underline">
             Sign out
           </Link>
         )}
       </div>
     </header>
   );
-} as unknown as () => JSX.Element);
+}
