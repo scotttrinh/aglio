@@ -11,7 +11,7 @@ interface Context {
 
 export default async function SequenceDetailPage(context: Context) {
   const session = await getSession();
-  if (session.state === "LOGGED_OUT") return redirect("/login");
+  if (session.state === "LOGGED_OUT") return redirect("/signin");
   const { client } = session;
 
   const { id } = context.params;

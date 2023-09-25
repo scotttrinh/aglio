@@ -2,6 +2,7 @@
 
 import { z } from "zod";
 import { match } from "ts-pattern";
+import { cookies } from "next/headers";
 
 import e from "@/dbschema/edgeql-js";
 import { getSession } from "@/getSession";
@@ -79,7 +80,7 @@ export async function createSequence(data: z.infer<typeof CreateSequence>) {
   });
 }
 
-const SignInWithPassword = z.object({
+const Credentials = z.object({
   provider: z.string(),
   email: z.string(),
   handle: z.string(),
@@ -91,11 +92,39 @@ const AUTHENTICATE_URL = new URL(
   getServerConfig().EDGEDB_AUTH_BASE_URL
 );
 
-export async function signInWithPassword(
-  data: z.infer<typeof SignInWithPassword>
-) {
-  const credentials = parseInput(SignInWithPassword, data);
+export async function signInWithPassword(data: z.infer<typeof Credentials>) {
+  const credentials = parseInput(Credentials, data);
   const response = await fetch(AUTHENTICATE_URL.toString(), {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(credentials),
+  });
+  const setCookies = response.headers.getSetCookie();
+  for (const setCookie of setCookies) {
+    const [key, val] = setCookie.split("=");
+    if (!key || !val) continue;
+    const v = val.split(";");
+    cookies().set(key, v[0]);
+  }
+
+  if (!response.ok) {
+    console.log({ status: response.status, body: await response.text() });
+    throw new Error("Could not authenticate with the provided credentials");
+  }
+
+  return response.json();
+}
+
+const REGISTER_URL = new URL(
+  "register",
+  getServerConfig().EDGEDB_AUTH_BASE_URL
+);
+
+export async function signUpWithPassword(data: z.infer<typeof Credentials>) {
+  const credentials = parseInput(Credentials, data);
+  const response = await fetch(REGISTER_URL.toString(), {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -104,7 +133,12 @@ export async function signInWithPassword(
   });
 
   if (!response.ok) {
-    throw new Error("Could not authenticate with the provided credentials");
+    console.log({ status: response.status, body: await response.text() });
+    if (response.status === 409) {
+      return await signInWithPassword(data);
+    }
+
+    throw new Error("Could not sign up with the provided credentials");
   }
 
   return response.json();

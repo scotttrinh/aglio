@@ -154,7 +154,6 @@ export function AddSequence({
       <form
         className="grid grid-cols-12 col-span-full items-center"
         action={(formData) => {
-          console.log(Array.from(formData.entries()));
           return handleSubmit({
             name,
             steps: steps.filter((step) => Boolean(step.duration)),
