@@ -7,6 +7,7 @@ import { cookies } from "next/headers";
 import e from "@/dbschema/edgeql-js";
 import { getSession } from "@/getSession";
 import { getServerConfig } from "@/config";
+import { client as anonymousClient } from "@/client";
 
 import { getYouTubePlaylist } from "./youtube";
 
@@ -141,7 +142,26 @@ export async function signUpWithPassword(data: z.infer<typeof Credentials>) {
     throw new Error("Could not sign up with the provided credentials");
   }
 
-  return response.json();
+  const body = await response.json();
+  const parsed = z
+    .object({
+      identity_id: z.string(),
+    })
+    .parse(body);
+
+  await anonymousClient.query(
+    `
+with identity := assert_exists(
+  (select ext::auth::LocalIdentity { email } filter .id = <uuid>$identity_id)
+),
+insert User {
+  name := "",
+  email := identity.email,
+  identities := identity,
+};
+`,
+    { identity_id: parsed.identity_id }
+  );
 }
 
 export async function deleteSequence(id: string) {
