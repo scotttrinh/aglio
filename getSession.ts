@@ -27,6 +27,7 @@ export async function getSession(): Promise<Session> {
   const edgedbAuthSession = cookies().get("edgedb-session");
 
   if (!edgedbAuthSession) return LOGGED_OUT_SESSION;
+  if (!edgedbAuthSession.value) return LOGGED_OUT_SESSION;
 
   const jwt = edgedbAuthSession.value.split(";")[0];
   const clientWithIdentityGlobal = client.withGlobals({

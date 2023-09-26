@@ -217,3 +217,7 @@ export async function createSource(data: z.infer<typeof CreateSource>) {
     }))
     .run(client);
 }
+
+export async function signOut() {
+  cookies().delete("edgedb-session");
+}
