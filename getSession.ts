@@ -6,7 +6,7 @@ import { client } from "@/client";
 export type User = {
   id: string;
   name: string;
-  email: string;
+  email: string | null;
 };
 
 type LoggedInSession = {

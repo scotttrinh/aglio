@@ -152,11 +152,10 @@ export async function signUpWithPassword(data: z.infer<typeof Credentials>) {
   await anonymousClient.query(
     `
 with identity := assert_exists(
-  (select ext::auth::LocalIdentity { email } filter .id = <uuid>$identity_id)
+  (select ext::auth::LocalIdentity filter .id = <uuid>$identity_id)
 ),
 insert User {
   name := "",
-  email := identity.email,
   identities := identity,
 };
 `,

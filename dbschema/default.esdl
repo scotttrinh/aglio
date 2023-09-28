@@ -11,9 +11,7 @@ module default {
 
   type User {
     required name: str;
-    required email: str {
-      constraint exclusive;
-    };
+    email: str;
     email_verified: datetime;
 
     multi identities: ext::auth::Identity {
