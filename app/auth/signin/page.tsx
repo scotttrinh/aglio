@@ -2,6 +2,7 @@ import { client } from "@/client";
 import { getServerConfig } from "@/config";
 
 import { SignInWithPassword } from "./password";
+import { SignInWithOAuth } from "./oauth";
 
 function buildOAuthAuthorizeHref(providerId: string): string {
   const redirectTo = new URL("auth/callback", getServerConfig().APP_BASE_URL);
@@ -46,14 +47,11 @@ export default async function SignIn() {
             />
           )}
           {otherProviders.map(({ provider_id, provider_name }) => (
-            <div key={provider_id}>
-              <a
-                href={buildOAuthAuthorizeHref(provider_id)}
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
-              >
-                Sign in with {provider_name}
-              </a>
-            </div>
+            <SignInWithOAuth
+              providerHref={buildOAuthAuthorizeHref(provider_id)}
+              providerName={provider_name}
+              key={provider_id}
+            />
           ))}
         </div>
       </div>

@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { match } from "ts-pattern";
 import { cookies } from "next/headers";
+import crypto from "node:crypto";
 
 import e from "@/dbschema/edgeql-js";
 import { getSession } from "@/getSession";
@@ -220,4 +221,16 @@ export async function createSource(data: z.infer<typeof CreateSource>) {
 
 export async function signOut() {
   cookies().delete("edgedb-session");
+}
+
+export async function initiatePKCE(): Promise<string> {
+  const verifier = crypto.randomBytes(128).toString("hex");
+  const challenge = crypto
+    .createHash("sha256")
+    .update(verifier)
+    .digest("base64url");
+
+  cookies().set("edgedb_pkce_verifier", verifier);
+
+  return challenge;
 }
