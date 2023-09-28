@@ -12,12 +12,12 @@ export async function Header() {
       <Breadcrumbs />
       <div className="ml-auto">
         {session.state === "LOGGED_OUT" && (
-          <Link href="/signin" className="underline">
+          <Link href="/auth/signin" className="underline">
             Sign in
           </Link>
         )}
         {session.state === "LOGGED_IN" && (
-          <Link href="/signout" className="underline">
+          <Link href="/auth/signout" className="underline">
             Sign out
           </Link>
         )}

@@ -18,7 +18,7 @@ const headerCellClass = clsx("text-gray-500 dark:text-gray-400");
 export default async function Sequences() {
   const session = await getSession();
 
-  if (session.state === "LOGGED_OUT") return redirect("/signin");
+  if (session.state === "LOGGED_OUT") return redirect("/auth/signin");
 
   const { client } = session;
 
