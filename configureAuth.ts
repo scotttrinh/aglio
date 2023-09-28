@@ -5,16 +5,39 @@ import inquirer from "inquirer";
 
 const client = createClient();
 
+type AuthConfig = {
+  token_time_to_live: string;
+  providers: {
+    provider_id: string;
+    provider_name: string;
+    url: string | null;
+    secret: string | null;
+    client_id: string | null;
+  }[];
+};
+
 async function main() {
-  console.log("Checking for existing auth config");
-
-  const signingKeyIsSet = await client.queryRequiredSingle(`
-SELECT ext::auth::signing_key_exists();
+  const existingConfig = await client.queryRequiredSingle<AuthConfig>(`
+SELECT cfg::Config.extensions[is ext::auth::AuthConfig] {
+  *,
+  providers: {
+    *,
+    [is ext::auth::OAuthClientConfig].*,
+  },
+} limit 1
   `);
+  const maybeExistingPasswordProvider = existingConfig.providers.find(
+    (p) => p.provider_name === "password"
+  );
 
-  if (signingKeyIsSet) {
-    console.log("Authentication signing key is set, skipping configuration");
-    return;
+
+  if (existingConfig.providers.length > 0) {
+    console.warn(
+      `Auth is already configured with the following values:
+${JSON.stringify(existingConfig, null, 2)}
+
+`
+    );
   }
 
   const questions = [
@@ -23,19 +46,23 @@ SELECT ext::auth::signing_key_exists();
       name: "authSigningKey",
       message: "Enter the signing key:",
       default: crypto.randomBytes(32).toString("hex"),
-      validate: (val: string) => val.length >= 32 || "The key must be at least 32 bytes long",
+      validate: (val: string) =>
+        val.length >= 32 || "The key must be at least 32 bytes long",
     },
     {
       type: "input",
       name: "tokenTTL",
       message: "Enter the token time to live:",
-      default: "336 hours",
+      default: existingConfig.token_time_to_live.toString() ?? "336 hours",
     },
     {
       type: "checkbox",
       name: "providers",
       message: "Would you like to enable any of the following OAuth providers?",
       choices: ["github", "google", "azure", "apple"],
+      default:
+        existingConfig.providers.map((provider) => provider.provider_name) ??
+        [],
     },
     {
       type: "confirm",
@@ -48,38 +75,46 @@ SELECT ext::auth::signing_key_exists();
 
   const providersDetails: [string, any][] = [];
   for (const provider of answers.providers) {
+    const existingProvider = existingConfig.providers.find(
+      (p) => p.provider_name === provider
+    );
     const providerDetails = await inquirer.prompt([
       {
         type: "input",
         name: "url",
         message: `Enter the ${provider} URL:`,
+        default: existingProvider?.url,
       },
       {
         type: "input",
         name: "providerId",
         message: `Enter the ${provider} provider ID:`,
-        default: crypto.randomUUID(),
+        default: existingProvider?.provider_id ?? crypto.randomUUID(),
       },
       {
         type: "input",
         name: "secret",
         message: `Enter the ${provider} secret:`,
+        default: existingProvider?.secret,
       },
       {
         type: "input",
         name: "clientId",
         message: `Enter the ${provider} client ID:`,
+        default: existingProvider?.client_id,
       },
     ]);
     providersDetails.push([provider, providerDetails]);
   }
 
   if (answers.enablePasswordAuth) {
+    const providerIdDefault =
+      maybeExistingPasswordProvider?.provider_id ?? crypto.randomUUID();
     const { passwordId } = await inquirer.prompt({
       type: "input",
       name: "passwordId",
       message: "Enter the password provider ID:",
-      default: crypto.randomUUID(),
+      default: providerIdDefault,
     });
     answers.passwordId = passwordId;
   }
@@ -97,8 +132,6 @@ SELECT ext::auth::signing_key_exists();
   }
 
   for (const [provider, providerDetails] of providersDetails) {
-    console.log(`Setting up ${provider} OAuth provider`);
-
     query += `
       CONFIGURE CURRENT DATABASE
       INSERT ext::auth::OAuthClientConfig {
@@ -112,7 +145,6 @@ SELECT ext::auth::signing_key_exists();
   }
 
   if (answers.enablePasswordAuth && answers.passwordId) {
-    console.log("Setting up password provider");
     query += `
       CONFIGURE CURRENT DATABASE
       INSERT ext::auth::PasswordClientConfig {
