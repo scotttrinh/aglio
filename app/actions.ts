@@ -102,13 +102,14 @@ export async function signInWithPassword(data: z.infer<typeof Credentials>) {
     },
     body: JSON.stringify(credentials),
   });
-  const setCookies = response.headers.getSetCookie();
-  for (const setCookie of setCookies) {
-    const [key, val] = setCookie.split("=");
-    if (!key || !val) continue;
-    const v = val.split(";");
-    cookies().set(key, v[0]);
-  }
+  const body = await response.json();
+  const authToken = body.auth_token;
+
+  cookies().set({
+    name: "edgedb-session",
+    value: authToken,
+    httpOnly: true,
+  });
 
   if (!response.ok) {
     console.log({ status: response.status, body: await response.text() });
