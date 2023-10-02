@@ -224,7 +224,7 @@ export async function signOut() {
 }
 
 export async function initiatePKCE(): Promise<string> {
-  const verifier = crypto.randomBytes(128).toString("hex");
+  const verifier = crypto.randomBytes(32).toString("hex");
   const challenge = crypto
     .createHash("sha256")
     .update(verifier)
