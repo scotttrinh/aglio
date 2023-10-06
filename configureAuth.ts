@@ -22,14 +22,13 @@ SELECT cfg::Config.extensions[is ext::auth::AuthConfig] {
   *,
   providers: {
     *,
-    [is ext::auth::OAuthClientConfig].*,
+    [is ext::auth::OAuthProviderConfig].*,
   },
 } limit 1
   `);
   const maybeExistingPasswordProvider = existingConfig.providers.find(
-    (p) => p.provider_name === "password"
+    (p) => p.provider_name === "builtin::password"
   );
-
 
   if (existingConfig.providers.length > 0) {
     console.warn(
@@ -59,9 +58,9 @@ ${JSON.stringify(existingConfig, null, 2)}
       type: "checkbox",
       name: "providers",
       message: "Would you like to enable any of the following OAuth providers?",
-      choices: ["github", "google", "azure", "apple"],
+      choices: ["github", "google", "azure", "apple", "discord"],
       default:
-        existingConfig.providers.map((provider) => provider.provider_name) ??
+        existingConfig.providers.map((provider) => provider.provider_name.split("::")[1] ?? null) ??
         [],
     },
     {
@@ -81,15 +80,9 @@ ${JSON.stringify(existingConfig, null, 2)}
     const providerDetails = await inquirer.prompt([
       {
         type: "input",
-        name: "url",
-        message: `Enter the ${provider} URL:`,
-        default: existingProvider?.url,
-      },
-      {
-        type: "input",
-        name: "providerId",
-        message: `Enter the ${provider} provider ID:`,
-        default: existingProvider?.provider_id ?? crypto.randomUUID(),
+        name: "clientId",
+        message: `Enter the ${provider} client ID:`,
+        default: existingProvider?.client_id,
       },
       {
         type: "input",
@@ -97,29 +90,14 @@ ${JSON.stringify(existingConfig, null, 2)}
         message: `Enter the ${provider} secret:`,
         default: existingProvider?.secret,
       },
-      {
-        type: "input",
-        name: "clientId",
-        message: `Enter the ${provider} client ID:`,
-        default: existingProvider?.client_id,
-      },
     ]);
     providersDetails.push([provider, providerDetails]);
   }
 
-  if (answers.enablePasswordAuth) {
-    const providerIdDefault =
-      maybeExistingPasswordProvider?.provider_id ?? crypto.randomUUID();
-    const { passwordId } = await inquirer.prompt({
-      type: "input",
-      name: "passwordId",
-      message: "Enter the password provider ID:",
-      default: providerIdDefault,
-    });
-    answers.passwordId = passwordId;
-  }
-
   let query = `
+    CONFIGURE CURRENT DATABASE
+    RESET ext::auth::ProviderConfig;
+
     CONFIGURE CURRENT DATABASE SET
     ext::auth::AuthConfig::auth_signing_key := '${answers.authSigningKey}';
   `;
@@ -131,26 +109,29 @@ ${JSON.stringify(existingConfig, null, 2)}
     `;
   }
 
+  const PROVIDER_MAP: Record<string, string> = {
+    "github": "GithubOAuthProvider",
+    "google": "GoogleOAuthProvider",
+    "apple": "AppleOAuthProvider",
+    "azure": "AzureOAuthProvider",
+    "discord": "DiscordOAuthProvider",
+  };
+
   for (const [provider, providerDetails] of providersDetails) {
+    const providerType = PROVIDER_MAP[provider];
     query += `
       CONFIGURE CURRENT DATABASE
-      INSERT ext::auth::OAuthClientConfig {
-        provider_name := '${provider}',
-        url := '${providerDetails.url}',
-        provider_id := '${providerDetails.providerId}',
+      INSERT ext::auth::${providerType} {
         secret := '${providerDetails.secret}',
         client_id := '${providerDetails.clientId}'
       };
     `;
   }
 
-  if (answers.enablePasswordAuth && answers.passwordId) {
+  if (answers.enablePasswordAuth) {
     query += `
       CONFIGURE CURRENT DATABASE
-      INSERT ext::auth::PasswordClientConfig {
-        provider_name := 'password',
-        provider_id := '${answers.passwordId}',
-      };
+      INSERT ext::auth::EmailPasswordProviderConfig {};
     `;
   }
 

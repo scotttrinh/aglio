@@ -13,22 +13,30 @@ function buildOAuthAuthorizeHref(providerId: string): string {
   return url.href;
 }
 
+type PasswordProvider = {
+  name: "builtin::local_emailpassword"
+};
+
+type OAuthProvider = {
+  name: string;
+  displayName: string;
+}
+
+type Provider = PasswordProvider | OAuthProvider;
+
 export default async function SignIn() {
-  const providers = await client.query<{
-    provider_id: string;
-    provider_name: string;
-  }>(`
+  const providers = await client.query<Provider>(`
     select cfg::Config.extensions[is ext::auth::AuthConfig].providers {
-      provider_id,
-      provider_name,
+      name,
+      displayName := [is ext::auth::OAuthProviderConfig].display_name,
     };
   `);
 
   const maybePasswordProvider = providers.find(
-    (p) => p.provider_name === "password"
+    (p): p is PasswordProvider => p.name === "builtin::local_emailpassword"
   );
-  const otherProviders = providers.filter(
-    (p) => p.provider_name !== "password"
+  const otherProviders: OAuthProvider[] = providers.filter(
+    (p): p is OAuthProvider => p.name !== "builtin::local_emailpassword"
   );
 
   return (
@@ -42,15 +50,15 @@ export default async function SignIn() {
         <div className="mt-8 space-y-6">
           {maybePasswordProvider && (
             <SignInWithPassword
-              provider={maybePasswordProvider.provider_id}
-              key={maybePasswordProvider.provider_id}
+              provider={maybePasswordProvider.name}
+              key={maybePasswordProvider.name}
             />
           )}
-          {otherProviders.map(({ provider_id, provider_name }) => (
+          {otherProviders.map(({ name, displayName }) => (
             <SignInWithOAuth
-              providerHref={buildOAuthAuthorizeHref(provider_id)}
-              providerName={provider_name}
-              key={provider_id}
+              providerHref={buildOAuthAuthorizeHref(name)}
+              providerName={displayName}
+              key={name}
             />
           ))}
         </div>
