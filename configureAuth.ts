@@ -8,12 +8,19 @@ const client = createClient();
 type AuthConfig = {
   token_time_to_live: string;
   providers: {
-    provider_id: string;
-    provider_name: string;
+    name: string;
     url: string | null;
     secret: string | null;
     client_id: string | null;
   }[];
+  ui: {
+    redirect_to: string;
+    redirect_to_on_signup: string;
+    app_name: string;
+    logo_url: string;
+    dark_logo_url: string;
+    brand_color: string;
+  } | null;
 };
 
 async function main() {
@@ -21,14 +28,12 @@ async function main() {
 SELECT cfg::Config.extensions[is ext::auth::AuthConfig] {
   *,
   providers: {
-    *,
+    name,
     [is ext::auth::OAuthProviderConfig].*,
   },
+  ui: { * },
 } limit 1
   `);
-  const maybeExistingPasswordProvider = existingConfig.providers.find(
-    (p) => p.provider_name === "builtin::password"
-  );
 
   if (existingConfig.providers.length > 0) {
     console.warn(
@@ -60,13 +65,24 @@ ${JSON.stringify(existingConfig, null, 2)}
       message: "Would you like to enable any of the following OAuth providers?",
       choices: ["github", "google", "azure", "apple", "discord"],
       default:
-        existingConfig.providers.map((provider) => provider.provider_name.split("::")[1] ?? null) ??
-        [],
+        existingConfig.providers.map(
+          (provider) => provider.name.split("::")[1] ?? null
+        ) ?? [],
+    },
+    {
+      type: "confirm",
+      name: "enableHostedUI",
+      message: "Would you like to enable the hosted Auth UI?",
     },
     {
       type: "confirm",
       name: "enablePasswordAuth",
       message: "Would you like to enable local password authentication?",
+    },
+    {
+      type: "confirm",
+      name: "enableSmtp",
+      message: "Would you like to enable SMTP?",
     },
   ];
 
@@ -75,7 +91,7 @@ ${JSON.stringify(existingConfig, null, 2)}
   const providersDetails: [string, any][] = [];
   for (const provider of answers.providers) {
     const existingProvider = existingConfig.providers.find(
-      (p) => p.provider_name === provider
+      (p) => p.name === provider
     );
     const providerDetails = await inquirer.prompt([
       {
@@ -98,6 +114,15 @@ ${JSON.stringify(existingConfig, null, 2)}
     CONFIGURE CURRENT DATABASE
     RESET ext::auth::ProviderConfig;
 
+    CONFIGURE CURRENT DATABASE
+    RESET ext::auth::AuthConfig;
+
+    CONFIGURE CURRENT DATABASE
+    RESET ext::auth::UIConfig;
+
+    CONFIGURE CURRENT DATABASE
+    RESET ext::auth::SMTPConfig;
+
     CONFIGURE CURRENT DATABASE SET
     ext::auth::AuthConfig::auth_signing_key := '${answers.authSigningKey}';
   `;
@@ -110,11 +135,11 @@ ${JSON.stringify(existingConfig, null, 2)}
   }
 
   const PROVIDER_MAP: Record<string, string> = {
-    "github": "GithubOAuthProvider",
-    "google": "GoogleOAuthProvider",
-    "apple": "AppleOAuthProvider",
-    "azure": "AzureOAuthProvider",
-    "discord": "DiscordOAuthProvider",
+    github: "GitHubOAuthProvider",
+    google: "GoogleOAuthProvider",
+    apple: "AppleOAuthProvider",
+    azure: "AzureOAuthProvider",
+    discord: "DiscordOAuthProvider",
   };
 
   for (const [provider, providerDetails] of providersDetails) {
@@ -129,9 +154,115 @@ ${JSON.stringify(existingConfig, null, 2)}
   }
 
   if (answers.enablePasswordAuth) {
+    const passwordAuthConfig = await inquirer.prompt([
+      {
+        type: "confirm",
+        name: "requireVerification",
+        message: "Require email verification?",
+      },
+    ]);
     query += `
       CONFIGURE CURRENT DATABASE
-      INSERT ext::auth::EmailPasswordProviderConfig {};
+      INSERT ext::auth::EmailPasswordProviderConfig {
+        require_verification := <bool>${passwordAuthConfig.requireVerification}
+      };
+    `;
+  }
+
+  if (answers.enableHostedUI) {
+    const hostedUi = await inquirer.prompt([
+      {
+        type: "input",
+        name: "appName",
+        message: "Enter the app name:",
+        default: existingConfig.ui?.app_name ?? "",
+        required: true,
+      },
+      {
+        type: "input",
+        name: "redirectTo",
+        message: "Enter the redirect URL:",
+        default: existingConfig.ui?.redirect_to ?? "",
+        required: true,
+      },
+    ]);
+
+    query += `
+      CONFIGURE CURRENT DATABASE
+      INSERT ext::auth::UIConfig {
+        redirect_to := '${hostedUi.redirectTo}',
+        app_name := '${hostedUi.appName}',
+      };
+    `;
+  }
+
+  if (answers.enableSmtp) {
+    const smtpConfig = await inquirer.prompt([
+      {
+        type: "input",
+        name: "sender",
+        message: "Sender email:",
+        required: true,
+      },
+      {
+        type: "input",
+        name: "host",
+        message: "SMTP Host:",
+        default: "localhost",
+        required: true,
+      },
+      {
+        type: "number",
+        name: "port",
+        message: "SMTP Port:",
+        default: 1025,
+        required: true,
+      },
+      {
+        type: "input",
+        name: "username",
+        message: "SMTP Username:",
+      },
+      {
+        type: "input",
+        name: "password",
+        message: "SMTP Password:",
+      },
+      {
+        type: "list",
+        name: "security",
+        message: "SMTP security mode:",
+        choices: ["STARTTLSOrPlainText", "STARTTLS", "TLS", "PlainText"],
+        default: "STARTTLSOrPlainText",
+      },
+      {
+        type: "confirm",
+        name: "validate_certs",
+        message: "Should we validate SMTP certificates?",
+        default: false,
+      },
+    ]);
+    query += `
+      CONFIGURE CURRENT DATABASE SET
+      ext::auth::SMTPConfig::sender := '${smtpConfig.sender}';
+
+      CONFIGURE CURRENT DATABASE SET
+      ext::auth::SMTPConfig::host := '${smtpConfig.host}';
+
+      CONFIGURE CURRENT DATABASE SET
+      ext::auth::SMTPConfig::port := <int32>${smtpConfig.port};
+
+      CONFIGURE CURRENT DATABASE SET
+      ext::auth::SMTPConfig::username := '${smtpConfig.username}';
+
+      CONFIGURE CURRENT DATABASE SET
+      ext::auth::SMTPConfig::password := '${smtpConfig.password}';
+
+      CONFIGURE CURRENT DATABASE SET
+      ext::auth::SMTPConfig::security := '${smtpConfig.security}';
+
+      CONFIGURE CURRENT DATABASE SET
+      ext::auth::SMTPConfig::validate_certs := <bool>${smtpConfig.validate_certs};
     `;
   }
 
