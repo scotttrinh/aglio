@@ -54,6 +54,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   const data = await response.json();
   const parsed = TokenExchangeBody.safeParse(data);
   if (!parsed.success) {
+    console.error(parsed.error);
     redirect("/auth/signin");
   }
 

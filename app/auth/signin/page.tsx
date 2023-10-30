@@ -3,6 +3,7 @@ import { getServerConfig } from "@/config";
 
 import { SignInWithPassword } from "./password";
 import { SignInWithOAuth } from "./oauth";
+import HostedAuthPage from "./hostedAuthPage";
 
 function buildOAuthAuthorizeHref(providerId: string): string {
   const redirectTo = new URL("auth/callback", getServerConfig().APP_BASE_URL);
@@ -24,7 +25,9 @@ type OAuthProvider = {
 
 type Provider = PasswordProvider | OAuthProvider;
 
-export default async function SignIn() {
+export default HostedAuthPage;
+
+export async function SignIn() {
   const providers = await client.query<Provider>(`
     select cfg::Config.extensions[is ext::auth::AuthConfig].providers {
       name,
@@ -66,3 +69,4 @@ export default async function SignIn() {
     </div>
   );
 }
+

@@ -11,6 +11,12 @@ import { getServerConfig } from "@/config";
 import { client as anonymousClient } from "@/client";
 
 import { getYouTubePlaylist } from "./youtube";
+import {
+  AUTHENTICATE_URL,
+  CodeResponse,
+  TokenResponse,
+  makeTokenUrl,
+} from "./authService";
 
 function parseInput<Schema extends z.ZodTypeAny>(
   schema: Schema,
@@ -83,33 +89,20 @@ export async function createSequence(data: z.infer<typeof CreateSequence>) {
 }
 
 const Credentials = z.object({
+  challenge: z.string(),
   provider: z.string(),
   email: z.string(),
-  handle: z.string(),
   password: z.string(),
 });
 
-const AUTHENTICATE_URL = new URL(
-  "authenticate",
-  getServerConfig().EDGEDB_AUTH_BASE_URL
-);
-
 export async function signInWithPassword(data: z.infer<typeof Credentials>) {
   const credentials = parseInput(Credentials, data);
-  const response = await fetch(AUTHENTICATE_URL.toString(), {
+  const response = await fetch(AUTHENTICATE_URL.href, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify(credentials),
-  });
-  const body = await response.json();
-  const authToken = body.auth_token;
-
-  cookies().set({
-    name: "edgedb-session",
-    value: authToken,
-    httpOnly: true,
   });
 
   if (!response.ok) {
@@ -117,7 +110,26 @@ export async function signInWithPassword(data: z.infer<typeof Credentials>) {
     throw new Error("Could not authenticate with the provided credentials");
   }
 
-  return response.json();
+  const { code } = CodeResponse.parse(await response.json());
+
+  const verifier = cookies().get("edgedb_pkce_verifier")?.value;
+  if (!verifier) {
+    throw new Error("No verifier set in cookie");
+  }
+
+  const tokenUrl = makeTokenUrl(code, verifier);
+  const tokenResponse = await fetch(tokenUrl.href, {
+    method: "GET",
+  });
+  const { auth_token: authToken } = TokenResponse.parse(
+    await tokenResponse.json()
+  );
+
+  cookies().set({
+    name: "edgedb-session",
+    value: authToken,
+    httpOnly: true,
+  });
 }
 
 const REGISTER_URL = new URL(
@@ -127,12 +139,15 @@ const REGISTER_URL = new URL(
 
 export async function signUpWithPassword(data: z.infer<typeof Credentials>) {
   const credentials = parseInput(Credentials, data);
-  const response = await fetch(REGISTER_URL.toString(), {
+  const response = await fetch(REGISTER_URL.href, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify(credentials),
+    body: JSON.stringify({
+      ...credentials,
+      verify_url: "https://dev-web.aglioaglio.com/auth/verify",
+    }),
   });
 
   if (!response.ok) {
@@ -143,26 +158,6 @@ export async function signUpWithPassword(data: z.infer<typeof Credentials>) {
 
     throw new Error("Could not sign up with the provided credentials");
   }
-
-  const body = await response.json();
-  const parsed = z
-    .object({
-      identity_id: z.string(),
-    })
-    .parse(body);
-
-  await anonymousClient.query(
-    `
-with identity := assert_exists(
-  (select ext::auth::LocalIdentity filter .id = <uuid>$identity_id)
-),
-insert User {
-  name := "",
-  identities := identity,
-};
-`,
-    { identity_id: parsed.identity_id }
-  );
 }
 
 export async function deleteSequence(id: string) {
@@ -223,14 +218,45 @@ export async function signOut() {
   cookies().delete("edgedb-session");
 }
 
-export async function initiatePKCE(): Promise<string> {
-  const verifier = crypto.randomBytes(32).toString("hex");
+type WithVerifier = {
+  verifier: string;
+};
+export async function initiatePKCE(email?: string): Promise<string> {
+  const flow: WithVerifier | null =
+    email !== undefined
+      ? await anonymousClient.querySingle<WithVerifier>(
+          `select PKCEFlow { verifier } filter .email = <str>$email;`,
+          { email }
+        )
+      : null;
+
+  const verifier =
+    flow?.verifier ?? crypto.randomBytes(32).toString("base64url");
   const challenge = crypto
     .createHash("sha256")
     .update(verifier)
     .digest("base64url");
 
+  if (email !== undefined && flow === null) {
+    await anonymousClient.query(
+      `
+insert PKCEFlow {
+  email := <str>$email,
+  verifier := <str>$verifier
+}
+    `,
+      {
+        verifier,
+        email,
+      }
+    );
+  }
+
   cookies().set("edgedb_pkce_verifier", verifier);
+  console.log({
+    verifier,
+    challenge,
+  });
 
   return challenge;
 }

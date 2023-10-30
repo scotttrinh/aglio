@@ -5,12 +5,16 @@ import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/Button";
 import { Input } from "@/components/Input";
-import { signInWithPassword, signUpWithPassword } from "@/app/actions";
+import {
+  initiatePKCE,
+  signInWithPassword,
+  signUpWithPassword,
+} from "@/app/actions";
 import { useSactRefresh } from "@/app/useSact";
 
 const Credentials = z.object({
+  challenge: z.string(),
   provider: z.string(),
-  handle: z.string(),
   email: z.string(),
   password: z.string(),
 });
@@ -24,11 +28,13 @@ export function SignInWithPassword({ provider }: { provider: string }) {
     async (formData: FormData) => {
       setFormErrors([]);
       try {
+        const email = formData.get("email");
+        const challenge = await initiatePKCE(email?.toString());
         await signInWithPassword(
           Credentials.parse({
+            challenge,
+            email,
             provider: formData.get("provider"),
-            handle: formData.get("email"),
-            email: formData.get("email"),
             password: formData.get("password"),
           })
         );
@@ -49,15 +55,18 @@ export function SignInWithPassword({ provider }: { provider: string }) {
 
       const formData = new FormData(formRef.current);
       try {
+        const email = formData.get("email");
+        const challenge = await initiatePKCE(email?.toString());
         await signUpWithPassword(
           Credentials.parse({
+            challenge,
+            email,
             provider: formData.get("provider"),
-            handle: formData.get("email"),
-            email: formData.get("email"),
             password: formData.get("password"),
           })
         );
         setFormErrors(["Successfully created account"]);
+        router.replace("/");
       } catch (e) {
         setFormErrors((existing) => [...existing, (e as Error).message]);
       }

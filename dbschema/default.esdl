@@ -22,6 +22,15 @@ module default {
     };
   }
 
+  type PKCEFlow {
+    required email: str {
+      constraint exclusive;
+    };
+    required verifier: str {
+      constraint exclusive;
+    };
+  }
+
   type Source {
     required provider: str;
     required media_type: str;
